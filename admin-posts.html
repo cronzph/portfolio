@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posts | Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- Admin Panel View -->
+    <div id="adminView" class="view active">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="admin-posts.html" class="nav-item active">
+                    <span>📝</span> Posts
+                </a>
+               
+                <a href="index.html" class="nav-item">
+                    <span>🌐</span> View Portfolio
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-block" onclick="logout()">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <h1>All Posts</h1>
+                <div class="top-bar-actions">
+                    <button class="btn btn-primary" onclick="openAddPostModal()">
+                        ➕ Add New Post
+                    </button>
+                    <div class="user-info">
+                        <span id="userEmail"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Search and Filter Section -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="search-filter-container">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="🔍 Search posts by title or description..." style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem;">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="categoryFilter" style="padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                                <option value="">All Categories</option>
+                                <option value="Web Design">Web Design</option>
+                                <option value="Mobile App">Mobile App</option>
+                                <option value="Branding">Branding</option>
+                                <option value="UI/UX">UI/UX</option>
+                                <option value="Illustration">Illustration</option>
+                                <option value="Photography">Photography</option>
+                            </select>
+                            <select id="sortFilter" style="padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="title-asc">Title (A-Z)</option>
+                                <option value="title-desc">Title (Z-A)</option>
+                            </select>
+                            <button id="clearFilters" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">Clear Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posts List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Manage Your Posts</h2>
+                        <span class="badge" id="postCount">0</span>
+                    </div>
+                    <div id="adminPostsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading posts...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Post Preview Modal -->
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <button class="modal-close" onclick="closePostModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalImage" class="modal-image"></div>
+                <div class="modal-info">
+                    <span class="modal-category" id="modalCategory"></span>
+                    <span class="modal-date" id="modalDate"></span>
+                </div>
+                <p id="modalDescription" class="modal-description"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="editPostFromModal()">✏️ Edit</button>
+                <button class="btn btn-danger" onclick="deletePostFromModal()">🗑️ Delete</button>
+                <button class="btn btn-secondary" onclick="closePostModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Post Modal -->
+    <div id="addPostModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Add New Post</h2>
+                <button class="modal-close" onclick="closeAddPostModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="formMessage"></div>
+                <form id="postForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="postTitle">Title *</label>
+                            <input type="text" id="postTitle" placeholder="Enter post title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="postCategory">Category *</label>
+                            <select id="postCategory" required>
+                                <option value="">Select category</option>
+                                <option value="Web Design">Web Design</option>
+                                <option value="Mobile App">Mobile App</option>
+                                <option value="Branding">Branding</option>
+                                <option value="UI/UX">UI/UX</option>
+                                <option value="Illustration">Illustration</option>
+                                <option value="Photography">Photography</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postDescription">Description *</label>
+                        <textarea id="postDescription" placeholder="Enter post description" required></textarea>
+                    </div>
+
+                    <!-- Banner Image Section -->
+                    <div class="form-group">
+                        <label>Preview Banner Image * (1 image, 1MB max)</label>
+                        <div class="file-upload" onclick="document.getElementById('bannerInput').click()">
+                            <div class="upload-icon">🖼️</div>
+                            <p>Click to upload banner image</p>
+                            <p class="upload-hint">This will be the main preview image</p>
+                            <input type="file" id="bannerInput" accept="image/*">
+                        </div>
+                        <div id="bannerPreview" class="banner-preview"></div>
+                    </div>
+
+                    <!-- Gallery Images Section -->
+                    <div class="form-group">
+                        <label>Gallery Images (Optional - Max 5 images, 1MB each)</label>
+                        <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                            <div class="upload-icon">📷</div>
+                            <p>Click to upload gallery images</p>
+                            <p class="upload-hint">PNG, JPG, GIF up to 1MB</p>
+                            <input type="file" id="fileInput" accept="image/*" multiple>
+                        </div>
+                        <div id="imagePreviews" class="image-previews"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeAddPostModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span id="submitBtnText">Create Post</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin-posts.js"></script>
+</body>
+</html>

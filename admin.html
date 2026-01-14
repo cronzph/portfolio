@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Login View -->
+    <div id="loginView" class="view active">
+        <div class="login-container">
+            <div class="login-card">
+                <h1>Admin Login</h1>
+                <p class="login-subtitle">Enter your credentials to access the admin panel</p>
+                <div id="loginError"></div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="admin@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                <a href="index.html" class="back-link">← Back to Portfolio</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard View -->
+    <div id="adminView" class="view">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="admin.html" class="nav-item active">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="admin-posts.html" class="nav-item">
+                    <span>📝</span> Posts
+                </a>
+                
+                <a href="index.html" class="nav-item">
+                    <span>🌐</span> View Portfolio
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-block" onclick="logout()">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <h1>Dashboard</h1>
+                <div class="top-bar-actions">
+                    <div class="user-info">
+                        <span id="userEmail"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-info">
+                            <h3 id="totalPosts">0</h3>
+                            <p>Total Posts</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👁️</div>
+                        <div class="stat-info">
+                            <h3 id="totalViews">0</h3>
+                            <p>Total Views</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📷</div>
+                        <div class="stat-info">
+                            <h3 id="totalImages">0</h3>
+                            <p>Total Images</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-info">
+                            <h3 id="recentPosts">0</h3>
+                            <p>Recent (7 days)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-row">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h2>Posts Overview</h2>
+                        </div>
+                        <canvas id="postsChart"></canvas>
+                    </div>
+
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h2>Posts by Category</h2>
+                        </div>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Posts Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Recent Posts</h2>
+                    </div>
+                    <div id="recentPostsList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading recent posts...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="js/admin-dashboard.js"></script>
+</body>
+</html>

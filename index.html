@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio | CRONZPH</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>CRONZPH</h2>
+            </div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#portfolio">Portfolio</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Hi, I'm Mark Icel</h1>
+                    <div class="typing-container">
+                        <span class="im-a">I'm a</span>
+                        <span class="typing-text" id="typingText"></span>
+                    </div>
+                    <p class="hero-description">
+                        Passionate about creating innovative digital solutions and bringing ideas to life through code and design.
+                    </p>
+                    <a href="#portfolio" class="btn btn-primary">View My Work</a>
+                </div>
+                <div class="hero-image">
+                    <img src="me.jpg" alt="Profile Picture">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section -->
+    <section id="portfolio" class="portfolio-section">
+        <div class="container">
+            <h2 class="section-title">Latest Projects</h2>
+            <p class="section-subtitle">Explore my recent work and creative projects</p>
+            
+            <div id="portfolioGrid" class="portfolio-grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading portfolio...</p>
+                </div>
+            </div>
+
+            <div class="view-all-container">
+                <a href="all-posts.html" class="btn btn-primary">View All Projects</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="container">
+            <h2 class="section-title">About Me</h2>
+            <div class="about-content">
+                <p>I'm a passionate designer and developer with expertise in creating modern, responsive web experiences. With a keen eye for detail and a love for clean code, I bring ideas to life through innovative design solutions.</p>
+                <div class="skills">
+                    <span class="skill-tag">UI/UX Design</span>
+                    <span class="skill-tag">Web Development</span>
+                    <span class="skill-tag">Graphic Design</span>
+                    <span class="skill-tag">A.I Automation</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <h2 class="section-title">Get In Touch</h2>
+            <p class="section-subtitle">Let's work together on your next project</p>
+            
+            <div class="contact-form-container">
+                <iframe src="https://tally.so/embed/vGDBk8?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1" width="100%" height="500" frameborder="0" marginheight="0" marginwidth="0"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 CRONZPH. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/portfolio.js"></script>
+</body>
+</html>

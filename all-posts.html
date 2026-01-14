@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Projects | Your Name</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/all-posts.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>CRONZPH</h2>
+            </div>
+            <div class="nav-links">
+                <a href="index.html#home">Home</a>
+                <a href="index.html#portfolio">Portfolio</a>
+                <a href="index.html#about">About</a>
+                <a href="index.html#contact">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="page-header">
+        <div class="container">
+            <h1 class="page-title">All Projects</h1>
+            <p class="page-subtitle">Browse through all my creative work and projects</p>
+        </div>
+    </section>
+
+    <!-- Search and Filter Section -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="search-filter-wrapper">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Search projects by title or description...">
+                </div>
+                <div class="filter-controls">
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="Web Design">Web Design</option>
+                        <option value="Mobile App">Mobile App</option>
+                        <option value="Branding">Branding</option>
+                        <option value="UI/UX">UI/UX</option>
+                        <option value="Illustration">Illustration</option>
+                        <option value="Photography">Photography</option>
+                    </select>
+                    <select id="sortFilter">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="title-asc">Title (A-Z)</option>
+                        <option value="title-desc">Title (Z-A)</option>
+                    </select>
+                    <button id="clearFilters" class="btn btn-secondary">Clear Filters</button>
+                </div>
+            </div>
+            <div class="results-info">
+                <span id="resultsCount">0 projects found</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Posts Grid Section -->
+    <section class="all-posts-section">
+        <div class="container">
+            <div id="allPostsGrid" class="portfolio-grid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading projects...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Post Detail Modal -->
+    <div id="postModal" class="post-modal">
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-container">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle"></h2>
+                    <span id="modalCategory" class="post-category"></span>
+                </div>
+                <div id="modalBanner" class="modal-banner"></div>
+                <div class="modal-body">
+                    <p id="modalDescription"></p>
+                    <div class="modal-meta">
+                        <span id="modalDate"></span>
+                    </div>
+                    <div id="modalGallery" class="modal-gallery"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Your Name. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/all-posts.js"></script>
+</body>
+</html>
