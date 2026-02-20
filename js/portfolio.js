@@ -1,178 +1,194 @@
 // Portfolio Page JavaScript
 import { database } from './firebase-config.js';
-import { ref, onValue, push, set } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-// Store all posts globally for modal access
 let allPosts = {};
+let allHighlights = {}; // { category: postId }
 
-// Typing effect
+// ── TYPING EFFECT ─────────────────────────────────────────────────────────────
 const typingText = document.getElementById('typingText');
 const roles = [
-  'Editor',
-  'Web Developer', 
-  'Mobile Developer',
-  'Creator',
-  'Innovator',
-  'Arduino Engineer',    
-  'Technical Support',  
-  'Systems Technician', 
-  'Network Engineer',    
-  'Cyber Security',     
-  'Software Engineer',  
+  'Editor', 'Web Developer', 'Mobile Developer', 'Creator', 'Innovator',
+  'Arduino Engineer', 'Technical Support', 'Systems Technician',
+  'Network Engineer', 'Cyber Security', 'Software Engineer',
+  'Prompt Engineer', 'Vibe Coder', 'AI Enthusiast', 'Tech Explorer',
 ];
-let roleIndex = 0;
-let charIndex = 0;
-let isDeleting = false;
+let roleIndex = 0, charIndex = 0, isDeleting = false;
 
 function typeEffect() {
     const currentRole = roles[roleIndex];
-    
-    if (isDeleting) {
-        typingText.textContent = currentRole.substring(0, charIndex - 1);
-        charIndex--;
-    } else {
-        typingText.textContent = currentRole.substring(0, charIndex + 1);
-        charIndex++;
-    }
-
-    if (!isDeleting && charIndex === currentRole.length) {
-        setTimeout(() => isDeleting = true, 2000);
-    } else if (isDeleting && charIndex === 0) {
-        isDeleting = false;
-        roleIndex = (roleIndex + 1) % roles.length;
-    }
-
-    const typingSpeed = isDeleting ? 50 : 100;
-    setTimeout(typeEffect, typingSpeed);
+    typingText.textContent = isDeleting
+        ? currentRole.substring(0, charIndex - 1)
+        : currentRole.substring(0, charIndex + 1);
+    isDeleting ? charIndex-- : charIndex++;
+    if (!isDeleting && charIndex === currentRole.length) setTimeout(() => isDeleting = true, 2000);
+    else if (isDeleting && charIndex === 0) { isDeleting = false; roleIndex = (roleIndex + 1) % roles.length; }
+    setTimeout(typeEffect, isDeleting ? 50 : 100);
 }
-
-// Start typing effect
 typeEffect();
 
-// Load portfolio items
-function loadPortfolio() {
-    const postsRef = ref(database, 'posts');
-    const grid = document.getElementById('portfolioGrid');
+// ── CATEGORIES CONFIG ─────────────────────────────────────────────────────────
+const CATEGORIES = [
+    'Web Development', 'Mobile Development', 'Arduino / IoT', 'Networking',
+    'Cyber Security', 'IT Support', 'AI Automation', 'Game Development', 'Smart Systems',
+];
 
-    // Keep the loading spinner visible initially
-    console.log('Starting to load portfolio...');
+const ICONS = {
+    'Web Development': '🌐', 'Mobile Development': '📱', 'Arduino / IoT': '⚙️',
+    'Networking': '🔗', 'Cyber Security': '🔒', 'IT Support': '🖥️',
+    'AI Automation': '🤖', 'Game Development': '🎮', 'Smart Systems': '💡',
+};
 
-    onValue(postsRef, (snapshot) => {
-        console.log('Firebase snapshot received');
-        console.log('Snapshot exists:', snapshot.exists());
-        console.log('Snapshot data:', snapshot.val());
-        
-        // Clear loading spinner
-        grid.innerHTML = '';
-        allPosts = {};
-        
-        if (!snapshot.exists()) {
-            console.log('No posts found in database');
-            grid.innerHTML = `
-                <div class="empty-state">
-                    <h3>No projects yet</h3>
-                    <p>Check back soon for new content!</p>
-                </div>
-            `;
-            return;
+const CAT_COLORS = {
+    'Web Development': '#4f9eff', 'Mobile Development': '#a78bfa', 'Arduino / IoT': '#34d399',
+    'Networking': '#f59e0b', 'Cyber Security': '#f87171', 'IT Support': '#60a5fa',
+    'AI Automation': '#e879f9', 'Game Development': '#fb923c', 'Smart Systems': '#2dd4bf',
+};
+
+function arrow() {
+    return `<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><polyline points="5 12 19 12"/><polyline points="13 6 19 12 13 18"/></svg>`;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function getPostCategories(post) {
+    if (Array.isArray(post.categories) && post.categories.length > 0) return post.categories;
+    if (post.category) return [post.category];
+    return [];
+}
+
+function postMatchesCategory(post, cat) {
+    return getPostCategories(post).some(c => c.toLowerCase() === cat.toLowerCase());
+}
+
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length <= maxLength ? text : text.substring(0, maxLength) + '...';
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ── RENDER HIGHLIGHTS ─────────────────────────────────────────────────────────
+function renderHighlights() {
+    const grid = document.getElementById('highlightsGrid');
+    if (!grid) return;
+
+    const postsArray = Object.values(allPosts);
+    grid.innerHTML = '';
+
+    CATEGORIES.forEach(cat => {
+        const catCount = postsArray.filter(p => postMatchesCategory(p, cat)).length;
+
+        let post = null;
+        const highlightedId = allHighlights[cat];
+        if (highlightedId && allPosts[highlightedId]) {
+            post = allPosts[highlightedId];
         }
 
-        // Convert to array and sort by date (newest first)
-        const posts = [];
-        snapshot.forEach((childSnapshot) => {
-            const postData = {
-                id: childSnapshot.key,
-                ...childSnapshot.val()
-            };
-            posts.push(postData);
-            allPosts[childSnapshot.key] = postData;
-        });
-
-        console.log(`Loaded ${posts.length} posts from Firebase`);
-        posts.sort((a, b) => b.createdAt - a.createdAt);
-
-        // Display only the latest 6 posts
-        const latestPosts = posts.slice(0, 6);
-        console.log(`Displaying ${latestPosts.length} latest posts`);
-        
-        latestPosts.forEach(post => {
-            const card = createPostCard(post);
-            grid.appendChild(card);
-        });
-    }, (error) => {
-        console.error('Error loading portfolio:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
-        grid.innerHTML = `
-            <div class="empty-state">
-                <h3>Unable to load portfolio</h3>
-                <p>Error: ${error.message}</p>
-                <p style="font-size: 0.9em; color: var(--text-secondary); margin-top: 0.5rem;">Please check the console for details.</p>
-            </div>
-        `;
+        grid.appendChild(buildHighlightCard(cat, post, catCount));
     });
 }
 
-// Create post card with banner image support and click handler
-function createPostCard(post) {
+function buildHighlightCard(cat, post, catCount) {
     const card = document.createElement('div');
-    card.className = 'post-card';
-    card.onclick = () => openPostModal(post.id);
+    card.className = 'highlight-card';
+    card.dataset.cat = cat;
+    card.style.setProperty('--accent-color', CAT_COLORS[cat] || '#94a3b8');
 
-    const date = new Date(post.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    const imageUrl = post ? (post.bannerImage?.data || (post.images && post.images[0]?.data) || null) : null;
+    const thumb = imageUrl
+        ? `<img class="highlight-thumb" src="${imageUrl}" alt="${escapeHtml(post.title)}" loading="lazy">`
+        : `<div class="highlight-thumb-placeholder">${ICONS[cat] || '📁'}</div>`;
 
-    // Use banner image if available, otherwise fallback to first gallery image or old imageData
-    const imageUrl = post.bannerImage?.data || (post.images && post.images[0]?.data) || post.imageData;
+    const accentColor = CAT_COLORS[cat] || '#94a3b8';
+    const countBadge = `<span style="font-size:0.68rem;font-weight:600;padding:0.2rem 0.55rem;border-radius:99px;background:${accentColor}22;color:${accentColor};border:1px solid ${accentColor}44;white-space:nowrap;">${catCount} project${catCount !== 1 ? 's' : ''}</span>`;
 
     card.innerHTML = `
-        ${imageUrl 
-            ? `<div class="post-banner">
-                <img src="${imageUrl}" alt="${escapeHtml(post.title)}">
-               </div>` 
-            : '<div class="post-banner"><div class="no-image">No Image</div></div>'}
-        <div class="post-content">
-            <span class="post-category">${escapeHtml(post.category)}</span>
-            <h3 class="post-title">${escapeHtml(post.title)}</h3>
-            <p class="post-description">${escapeHtml(truncateText(post.description, 120))}</p>
-            <div class="post-meta">
-                📅 ${date}
-                ${post.imageCount ? ` • 🖼️ ${post.imageCount} images` : ''}
+        ${thumb}
+        <div class="highlight-body">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+                <span class="highlight-category-label">${cat}</span>
+                ${countBadge}
             </div>
-        </div>
-    `;
+            <p class="highlight-title">${post ? escapeHtml(post.title) : 'Coming Soon'}</p>
+            <p class="highlight-desc">${post ? escapeHtml(truncateText(post.description, 100)) : 'No project added yet for this category.'}</p>
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-top:1rem;">
+                ${post ? `<button class="highlight-view-btn" data-postid="${post.id}" style="background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">View Project ${arrow()}</button>` : ''}
+                <a href="all-posts.html?cat=${encodeURIComponent(cat)}" class="highlight-view-btn" style="opacity:${post ? '0.6' : '1'};">Browse All ${arrow()}</a>
+            </div>
+        </div>`;
+
+    // Attach click for View Project button
+    const viewBtn = card.querySelector('[data-postid]');
+    if (viewBtn) {
+        viewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openPostModal(viewBtn.dataset.postid);
+        });
+    }
 
     return card;
 }
 
-// Open post modal
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+function loadPortfolio() {
+    onValue(ref(database, 'highlights'), (snap) => {
+        allHighlights = {};
+        if (snap.exists()) {
+            snap.forEach(child => {
+                const data = child.val();
+                if (data) allHighlights[data.category] = data.postId;
+            });
+        }
+        renderHighlights();
+    });
+
+    onValue(ref(database, 'posts'), (snapshot) => {
+        allPosts = {};
+        if (snapshot.exists()) {
+            snapshot.forEach((childSnapshot) => {
+                const postData = { id: childSnapshot.key, ...childSnapshot.val() };
+                allPosts[childSnapshot.key] = postData;
+            });
+        }
+        window.portfolioPosts = Object.values(allPosts).sort((a, b) => b.createdAt - a.createdAt);
+        renderHighlights();
+    }, (error) => {
+        console.error('Error loading portfolio:', error);
+        const grid = document.getElementById('highlightsGrid');
+        if (grid) grid.innerHTML = `<div class="empty-state"><h3>Unable to load portfolio</h3><p>${error.message}</p></div>`;
+    });
+}
+
+// ── POST MODAL ────────────────────────────────────────────────────────────────
 function openPostModal(postId) {
     const post = allPosts[postId];
     if (!post) return;
 
-    // Create modal if it doesn't exist
     let modal = document.getElementById('postViewModal');
-    if (!modal) {
-        modal = createPostModal();
-        document.body.appendChild(modal);
-    }
+    if (!modal) { modal = createPostModal(); document.body.appendChild(modal); }
 
-    // Populate modal
     document.getElementById('modalPostTitle').textContent = post.title;
-    document.getElementById('modalPostCategory').textContent = post.category;
-    document.getElementById('modalPostDescription').textContent = post.description;
 
-    const date = new Date(post.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    // Multi-category badges
+    const cats = getPostCategories(post);
+    const catEl = document.getElementById('modalPostCategory');
+    catEl.innerHTML = cats.map(c =>
+        `<span style="display:inline-block;padding:0.2rem 0.6rem;border-radius:99px;font-size:0.75rem;font-weight:600;background:${CAT_COLORS[c] || '#94a3b8'}22;color:${CAT_COLORS[c] || '#94a3b8'};border:1px solid ${CAT_COLORS[c] || '#94a3b8'}44;margin:0.15rem;">${escapeHtml(c)}</span>`
+    ).join('');
+
+    // Description — preserve line breaks
+    const descEl = document.getElementById('modalPostDescription');
+    descEl.innerHTML = escapeHtml(post.description).replace(/\n/g, '<br>');
+
+    const date = new Date(post.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('modalPostDate').textContent = `📅 ${date}`;
 
-    // Display banner image
+    // Banner
     const modalBanner = document.getElementById('modalPostBanner');
     if (post.bannerImage) {
         modalBanner.innerHTML = `<img src="${post.bannerImage.data}" alt="${escapeHtml(post.title)}">`;
@@ -181,16 +197,12 @@ function openPostModal(postId) {
         modalBanner.style.display = 'none';
     }
 
-    // Display gallery images
+    // Gallery
     const modalGallery = document.getElementById('modalPostGallery');
     if (post.images && post.images.length > 0) {
         let galleryHtml = '<h3>Gallery</h3><div class="modal-gallery-grid">';
-        post.images.forEach((img, index) => {
-            galleryHtml += `
-                <div class="modal-gallery-item" onclick="viewImageFullSize('${img.data}')">
-                    <img src="${img.data}" alt="${escapeHtml(post.title)} - ${index + 1}">
-                </div>
-            `;
+        post.images.forEach((img, i) => {
+            galleryHtml += `<div class="modal-gallery-item" onclick="viewImageFullSize('${img.data}')"><img src="${img.data}" alt="${escapeHtml(post.title)} - ${i + 1}"></div>`;
         });
         galleryHtml += '</div>';
         modalGallery.innerHTML = galleryHtml;
@@ -203,7 +215,6 @@ function openPostModal(postId) {
     document.body.style.overflow = 'hidden';
 }
 
-// Create post modal HTML
 function createPostModal() {
     const modal = document.createElement('div');
     modal.id = 'postViewModal';
@@ -215,193 +226,51 @@ function createPostModal() {
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 id="modalPostTitle"></h2>
-                    <span id="modalPostCategory" class="post-category"></span>
+                    <div id="modalPostCategory" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.4rem;"></div>
                 </div>
                 <div id="modalPostBanner" class="modal-banner"></div>
                 <div class="modal-body">
-                    <p id="modalPostDescription"></p>
-                    <div class="modal-meta">
-                        <span id="modalPostDate"></span>
-                    </div>
+                    <p id="modalPostDescription" style="white-space:pre-line;line-height:1.75;word-break:break-word;"></p>
+                    <div class="modal-meta"><span id="modalPostDate"></span></div>
                     <div id="modalPostGallery" class="modal-gallery"></div>
                 </div>
             </div>
-        </div>
-    `;
+        </div>`;
     return modal;
 }
 
-// Close post modal
-window.closePostModal = function() {
+window.closePostModal = function () {
     const modal = document.getElementById('postViewModal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
+    if (modal) { modal.classList.remove('active'); document.body.style.overflow = 'auto'; }
 };
 
-// View image full size
-window.viewImageFullSize = function(imageSrc) {
+window.viewImageFullSize = function (imageSrc) {
     const viewer = document.createElement('div');
-    viewer.id = 'imageViewer';
-    viewer.style.cssText = `
-        display: flex;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.95);
-        z-index: 10000;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-    `;
+    viewer.style.cssText = `display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;align-items:center;justify-content:center;padding:2rem;`;
     viewer.innerHTML = `
-        <button onclick="this.parentElement.remove(); document.body.style.overflow='auto';" style="position: absolute; top: 20px; right: 20px; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 2rem; width: 50px; height: 50px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s;">&times;</button>
-        <img src="${imageSrc}" style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 8px;">
-    `;
-    viewer.onclick = (e) => {
-        if (e.target === viewer) {
-            viewer.remove();
-            document.body.style.overflow = 'auto';
-        }
-    };
+        <button onclick="this.parentElement.remove();document.body.style.overflow='auto';"
+            style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:white;font-size:2rem;width:50px;height:50px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
+        <img src="${imageSrc}" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:8px;">`;
+    viewer.onclick = (e) => { if (e.target === viewer) { viewer.remove(); document.body.style.overflow = 'auto'; } };
     document.body.appendChild(viewer);
 };
 
-// Truncate text
-function truncateText(text, maxLength) {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-}
-
-// Escape HTML
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Contact form handling with Firebase
-const contactForm = document.getElementById('contactForm');
-
-// Only add event listener if contact form exists (not using Tally embed)
-if (contactForm) {
-    const submitBtn = document.getElementById('submitBtn');
-    const formMessage = document.getElementById('formMessage');
-
-    contactForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        // Get form data
-        const formData = {
-            name: document.getElementById('name').value.trim(),
-            email: document.getElementById('email').value.trim(),
-            subject: document.getElementById('subject').value.trim(),
-            message: document.getElementById('message').value.trim(),
-            timestamp: Date.now(),
-            status: 'unread'
-        };
-
-        // Validate form data
-        if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-            showFormMessage('error', '✗ Please fill in all fields.');
-            return;
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-            showFormMessage('error', '✗ Please enter a valid email address.');
-            return;
-        }
-
-        // Disable button and show loading state
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>📤 Sending...</span>';
-        formMessage.style.display = 'none';
-
-        try {
-            // Save to Firebase Realtime Database
-            const messagesRef = ref(database, 'messages');
-            const newMessageRef = push(messagesRef);
-            await set(newMessageRef, formData);
-            
-            // Clear form
-            contactForm.reset();
-            
-            // Show success message
-            showFormMessage('success', '✓ Message sent successfully! Thank you for reaching out. I\'ll get back to you soon.');
-            
-            // Auto-hide success message after 5 seconds
-            setTimeout(() => {
-                hideFormMessage();
-            }, 5000);
-        } catch (error) {
-            console.error('Contact form error:', error);
-            showFormMessage('error', '✗ Failed to send message. Please try again or contact me directly via email.');
-            
-            // Auto-hide error message after 7 seconds
-            setTimeout(() => {
-                hideFormMessage();
-            }, 7000);
-        } finally {
-            // Re-enable button
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Send Message';
-        }
-    });
-
-    // Helper function to show form messages
-    function showFormMessage(type, message) {
-        if (!formMessage) return;
-        formMessage.className = `form-message ${type}`;
-        formMessage.textContent = message;
-        formMessage.style.display = 'block';
-        
-        // Smooth scroll to message
-        formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    // Helper function to hide form messages
-    function hideFormMessage() {
-        if (!formMessage) return;
-        formMessage.style.display = 'none';
-        formMessage.className = 'form-message';
-        formMessage.textContent = '';
-    }
-} // End of contactForm if block
-
-// Smooth scroll for navigation links
+// ── SMOOTH SCROLL ─────────────────────────────────────────────────────────────
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 });
 
-// Close modal on escape key
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        closePostModal();
+        window.closePostModal();
         const imageViewer = document.getElementById('imageViewer');
-        if (imageViewer) {
-            imageViewer.remove();
-            document.body.style.overflow = 'auto';
-        }
+        if (imageViewer) { imageViewer.remove(); document.body.style.overflow = 'auto'; }
     }
 });
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadPortfolio();
-});
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => loadPortfolio());

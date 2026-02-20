@@ -6,6 +6,32 @@
     <title>All Projects | Your Name</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/all-posts.css">
+    <style>
+        /* Multiple category badges */
+        .post-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Modal category area — flex wrap for multiple badges */
+        #modalCategory {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.4rem;
+        }
+
+        /* Description preserves formatting */
+        #modalDescription {
+            white-space: pre-line;
+            line-height: 1.75;
+            color: var(--text-secondary, #94a3b8);
+            font-size: 1rem;
+            word-break: break-word;
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -47,7 +73,9 @@
                         <option value="Networking">Networking</option>
                         <option value="Cyber Security">Cyber Security</option>
                         <option value="IT Support">IT Support</option>
-                        <option value="UI/UX">UI/UX</option>
+                        <option value="AI Automation">AI Automation</option>
+                        <option value="Game Development">Game Development</option>
+                        <option value="Smart Systems">Smart Systems</option>
                     </select>
                     <select id="sortFilter">
                         <option value="newest">Newest First</option>
@@ -84,10 +112,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 id="modalTitle"></h2>
-                    <span id="modalCategory" class="post-category"></span>
+                    <!-- Now holds multiple <span> badges -->
+                    <div id="modalCategory"></div>
                 </div>
                 <div id="modalBanner" class="modal-banner"></div>
                 <div class="modal-body">
+                    <!-- Uses innerHTML with <br> for line breaks -->
                     <p id="modalDescription"></p>
                     <div class="modal-meta">
                         <span id="modalDate"></span>
@@ -101,7 +131,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 Your Name. All rights reserved.</p>
+            <p>&copy; 2026 CRONZPH. All rights reserved.</p>
         </div>
     </footer>
 

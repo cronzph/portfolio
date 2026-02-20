@@ -5,14 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio | CRONZPH</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .highlights-section { padding: 6rem 0; }
+
+        .highlights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .highlight-card {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: var(--card-bg, #1a1a2e);
+            border: 1px solid rgba(255,255,255,0.07);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .highlight-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+        }
+
+        .highlight-card::before {
+            content: '';
+            display: block;
+            height: 4px;
+            width: 100%;
+            background: var(--accent-color);
+        }
+
+        .highlight-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            display: block;
+        }
+
+        .highlight-thumb-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.07));
+        }
+
+        .highlight-body {
+            padding: 1.25rem 1.4rem 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .highlight-category-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent-color);
+        }
+
+        .highlight-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #f0f0f0;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .highlight-desc {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.5;
+            margin: 0;
+            flex: 1;
+        }
+
+        .highlight-view-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 1rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: gap 0.2s ease;
+        }
+
+        .highlight-view-btn:hover { gap: 0.7rem; }
+
+        .highlight-view-btn svg {
+            width: 14px; height: 14px;
+            stroke: currentColor; fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round; stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .highlights-loading {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem;
+            gap: 1rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* Accent colors per category */
+        .highlight-card[data-cat="Web Development"]      { --accent-color: #4f9eff; }
+        .highlight-card[data-cat="Mobile Development"]   { --accent-color: #a78bfa; }
+        .highlight-card[data-cat="Arduino / IoT"]        { --accent-color: #34d399; }
+        .highlight-card[data-cat="Networking"]           { --accent-color: #f59e0b; }
+        .highlight-card[data-cat="Cyber Security"]       { --accent-color: #f87171; }
+        .highlight-card[data-cat="IT Support"]           { --accent-color: #60a5fa; }
+        .highlight-card[data-cat="AI Automation"]        { --accent-color: #e879f9; }
+        .highlight-card[data-cat="Game Development"]     { --accent-color: #fb923c; }
+        .highlight-card[data-cat="Smart Systems"]        { --accent-color: #2dd4bf; }
+
+        @media (max-width: 640px) {
+            .highlights-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
-            <div class="nav-brand">
-                <h2>CRONZPH</h2>
-            </div>
+            <div class="nav-brand"><h2>CRONZPH</h2></div>
             <div class="nav-links">
                 <a href="#home">Home</a>
                 <a href="#portfolio">Portfolio</a>
@@ -44,16 +175,16 @@
         </div>
     </section>
 
-    <!-- Portfolio Section -->
-    <section id="portfolio" class="portfolio-section">
+    <!-- Project Highlights Section -->
+    <section id="portfolio" class="highlights-section">
         <div class="container">
-            <h2 class="section-title">Latest Projects</h2>
-            <p class="section-subtitle">Explore my recent work and creative projects</p>
-            
-            <div id="portfolioGrid" class="portfolio-grid">
-                <div class="loading">
+            <h2 class="section-title">Project Highlights</h2>
+            <p class="section-subtitle">One featured project from each category</p>
+
+            <div id="highlightsGrid" class="highlights-grid">
+                <div class="highlights-loading">
                     <div class="spinner"></div>
-                    <p>Loading portfolio...</p>
+                    <p>Loading highlights...</p>
                 </div>
             </div>
 
@@ -68,12 +199,17 @@
         <div class="container">
             <h2 class="section-title">About Me</h2>
             <div class="about-content">
-                <p>I'm a passionate designer and developer with expertise in creating modern, responsive web experiences. With a keen eye for detail and a love for clean code, I bring ideas to life through innovative design solutions.</p>
+                <p>I'm a developer and hardware enthusiast who loves building real solutions  from writing clean, functional code to designing and assembling hardware systems. I enjoy turning ideas into working systems, whether that's a web app, an IoT device, or an automated software solution.</p>
                 <div class="skills">
-                    <span class="skill-tag">UI/UX Design</span>
                     <span class="skill-tag">Web Development</span>
-                    <span class="skill-tag">Graphic Design</span>
-                    <span class="skill-tag">A.I Automation</span>
+                    <span class="skill-tag">Mobile Development</span>
+                    <span class="skill-tag">Arduino / IoT</span>
+                    <span class="skill-tag">Networking</span>
+                    <span class="skill-tag">Cyber Security</span>
+                    <span class="skill-tag">IT Support</span>
+                    <span class="skill-tag">AI Automation</span>
+                    <span class="skill-tag">Game Development</span>
+                    <span class="skill-tag">Smart Systems</span>
                 </div>
             </div>
         </div>
@@ -84,7 +220,6 @@
         <div class="container">
             <h2 class="section-title">Get In Touch</h2>
             <p class="section-subtitle">Let's work together on your next project</p>
-
             <div class="contact-form-container">
                 <form id="contactForm">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -105,9 +240,7 @@
                         <label for="message">Message</label>
                         <textarea id="message" name="message" rows="6" placeholder="Tell me about your project..." required></textarea>
                     </div>
-
                     <div id="formStatus" class="form-message"></div>
-
                     <button type="submit" class="submit-btn" id="submitBtn">
                         <span id="submitBtnText">Send Message 🚀</span>
                     </button>
@@ -123,24 +256,20 @@
         </div>
     </footer>
 
-    <!-- EmailJS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script type="module" src="js/portfolio.js"></script>
+
     <script>
         emailjs.init('E1How4bzSQe9KvDTR');
-
-        document.getElementById('contactForm').addEventListener('submit', function (e) {
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
             e.preventDefault();
-
             const submitBtn = document.getElementById('submitBtn');
             const submitBtnText = document.getElementById('submitBtnText');
             const formStatus = document.getElementById('formStatus');
-
             submitBtn.disabled = true;
             submitBtnText.textContent = 'Sending...';
             formStatus.className = 'form-message';
             formStatus.textContent = '';
-
             emailjs.sendForm('service_yvudknq', 'template_jty3phh', this)
                 .then(() => {
                     formStatus.className = 'form-message success';

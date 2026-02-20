@@ -14,9 +14,26 @@ window.openPostDetail = openPostDetail;
 document.addEventListener('DOMContentLoaded', () => {
     loadAllPosts();
     setupSearchAndFilters();
+    applyURLCategoryFilter();
 });
 
-// Load all posts
+// ── READ ?cat= FROM URL AND PRE-SELECT CATEGORY FILTER ───────────────────────
+function applyURLCategoryFilter() {
+    const params = new URLSearchParams(window.location.search);
+    const cat = params.get('cat');
+    if (!cat) return;
+
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (!categoryFilter) return;
+
+    const options = Array.from(categoryFilter.options);
+    const match = options.find(opt => opt.value.toLowerCase() === cat.toLowerCase());
+    if (match) {
+        categoryFilter.value = match.value;
+    }
+}
+
+// ── LOAD ALL POSTS ────────────────────────────────────────────────────────────
 function loadAllPosts() {
     const postsRef = ref(database, 'posts');
     const grid = document.getElementById('allPostsGrid');
@@ -38,10 +55,7 @@ function loadAllPosts() {
         }
 
         snapshot.forEach((childSnapshot) => {
-            const postData = {
-                id: childSnapshot.key,
-                ...childSnapshot.val()
-            };
+            const postData = { id: childSnapshot.key, ...childSnapshot.val() };
             allPosts[childSnapshot.key] = postData;
             filteredPosts[childSnapshot.key] = postData;
         });
@@ -59,85 +73,76 @@ function loadAllPosts() {
     });
 }
 
-// Apply filters and display posts
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+// Returns array of categories regardless of old/new data format
+function getPostCategories(post) {
+    if (Array.isArray(post.categories) && post.categories.length > 0) return post.categories;
+    if (post.category) return [post.category];
+    return [];
+}
+
+// ── APPLY FILTERS ─────────────────────────────────────────────────────────────
 function applyFiltersAndDisplay() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const categoryFilter = document.getElementById('categoryFilter').value;
     const sortFilter = document.getElementById('sortFilter').value;
     const grid = document.getElementById('allPostsGrid');
 
-    // Filter posts
     filteredPosts = {};
     Object.keys(allPosts).forEach(key => {
         const post = allPosts[key];
-        const matchesSearch = !searchTerm || 
-            post.title.toLowerCase().includes(searchTerm) || 
-            post.description.toLowerCase().includes(searchTerm);
-        const matchesCategory = !categoryFilter || post.category === categoryFilter;
+        const cats = getPostCategories(post);
 
-        if (matchesSearch && matchesCategory) {
-            filteredPosts[key] = post;
-        }
+        const matchesSearch = !searchTerm ||
+            post.title.toLowerCase().includes(searchTerm) ||
+            post.description.toLowerCase().includes(searchTerm);
+
+        const matchesCategory = !categoryFilter ||
+            cats.some(c => c.toLowerCase() === categoryFilter.toLowerCase());
+
+        if (matchesSearch && matchesCategory) filteredPosts[key] = post;
     });
 
-    // Convert to array and sort
     let postsArray = Object.values(filteredPosts);
 
-    switch(sortFilter) {
-        case 'newest':
-            postsArray.sort((a, b) => b.createdAt - a.createdAt);
-            break;
-        case 'oldest':
-            postsArray.sort((a, b) => a.createdAt - b.createdAt);
-            break;
-        case 'title-asc':
-            postsArray.sort((a, b) => a.title.localeCompare(b.title));
-            break;
-        case 'title-desc':
-            postsArray.sort((a, b) => b.title.localeCompare(a.title));
-            break;
+    switch (sortFilter) {
+        case 'newest':   postsArray.sort((a, b) => b.createdAt - a.createdAt); break;
+        case 'oldest':   postsArray.sort((a, b) => a.createdAt - b.createdAt); break;
+        case 'title-asc':  postsArray.sort((a, b) => a.title.localeCompare(b.title)); break;
+        case 'title-desc': postsArray.sort((a, b) => b.title.localeCompare(a.title)); break;
     }
 
-    // Update count
     updateResultsCount(postsArray.length);
-
-    // Display posts
     grid.innerHTML = '';
-    
+
     if (postsArray.length === 0) {
         grid.innerHTML = '<div class="empty-state"><p>No projects match your search criteria.</p></div>';
         return;
     }
 
-    postsArray.forEach(post => {
-        const card = createPostCard(post);
-        grid.appendChild(card);
-    });
+    postsArray.forEach(post => grid.appendChild(createPostCard(post)));
 }
 
-// Create post card with banner image
+// ── CREATE POST CARD ──────────────────────────────────────────────────────────
 function createPostCard(post) {
     const card = document.createElement('div');
     card.className = 'post-card';
     card.onclick = () => openPostDetail(post.id);
 
     const date = new Date(post.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        year: 'numeric', month: 'long', day: 'numeric'
     });
 
-    // Use banner image if available, otherwise fallback to first gallery image
     const imageUrl = post.bannerImage?.data || (post.images && post.images[0]?.data) || post.imageData;
+    const cats = getPostCategories(post);
+    const catBadges = cats.map(c => `<span class="post-category">${escapeHtml(c)}</span>`).join('');
 
     card.innerHTML = `
-        ${imageUrl 
-            ? `<div class="post-banner">
-                <img src="${imageUrl}" alt="${escapeHtml(post.title)}">
-               </div>` 
+        ${imageUrl
+            ? `<div class="post-banner"><img src="${imageUrl}" alt="${escapeHtml(post.title)}"></div>`
             : '<div class="post-banner"><div class="no-image">No Image</div></div>'}
         <div class="post-content">
-            <span class="post-category">${escapeHtml(post.category)}</span>
+            <div class="post-categories">${catBadges}</div>
             <h3 class="post-title">${escapeHtml(post.title)}</h3>
             <p class="post-description">${escapeHtml(truncateText(post.description, 120))}</p>
             <div class="post-meta">
@@ -150,7 +155,7 @@ function createPostCard(post) {
     return card;
 }
 
-// Open post detail modal
+// ── OPEN POST DETAIL MODAL ────────────────────────────────────────────────────
 function openPostDetail(postId) {
     const post = allPosts[postId];
     if (!post) return;
@@ -158,17 +163,22 @@ function openPostDetail(postId) {
     currentModalPost = post;
 
     document.getElementById('modalTitle').textContent = post.title;
-    document.getElementById('modalCategory').textContent = post.category;
-    document.getElementById('modalDescription').textContent = post.description;
+
+    // Multi-category support
+    const cats = getPostCategories(post);
+    const modalCatEl = document.getElementById('modalCategory');
+    modalCatEl.innerHTML = cats.map(c => `<span class="post-category">${escapeHtml(c)}</span>`).join('');
+
+    // Description — preserve line breaks
+    const modalDesc = document.getElementById('modalDescription');
+    modalDesc.innerHTML = escapeHtml(post.description).replace(/\n/g, '<br>');
 
     const date = new Date(post.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        year: 'numeric', month: 'long', day: 'numeric'
     });
     document.getElementById('modalDate').textContent = `📅 ${date}`;
 
-    // Display banner image
+    // Banner
     const modalBanner = document.getElementById('modalBanner');
     if (post.bannerImage) {
         modalBanner.innerHTML = `<img src="${post.bannerImage.data}" alt="${escapeHtml(post.title)}">`;
@@ -177,7 +187,7 @@ function openPostDetail(postId) {
         modalBanner.style.display = 'none';
     }
 
-    // Display gallery images
+    // Gallery
     const modalGallery = document.getElementById('modalGallery');
     if (post.images && post.images.length > 0) {
         let galleryHtml = '<h3>Gallery</h3><div class="gallery-grid">';
@@ -185,8 +195,7 @@ function openPostDetail(postId) {
             galleryHtml += `
                 <div class="gallery-item" onclick="viewImageFullSize('${img.data}')">
                     <img src="${img.data}" alt="${escapeHtml(post.title)} - ${index + 1}">
-                </div>
-            `;
+                </div>`;
         });
         galleryHtml += '</div>';
         modalGallery.innerHTML = galleryHtml;
@@ -199,27 +208,24 @@ function openPostDetail(postId) {
     document.body.style.overflow = 'hidden';
 }
 
-// Close modal
+// ── CLOSE MODAL ───────────────────────────────────────────────────────────────
 function closeModal() {
     document.getElementById('postModal').classList.remove('active');
     document.body.style.overflow = 'auto';
     currentModalPost = null;
 }
 
-// Setup search and filters
+// ── SEARCH & FILTERS ──────────────────────────────────────────────────────────
 function setupSearchAndFilters() {
     const searchInput = document.getElementById('searchInput');
     const categoryFilter = document.getElementById('categoryFilter');
     const sortFilter = document.getElementById('sortFilter');
     const clearFilters = document.getElementById('clearFilters');
 
-    // Debounce search input
     let searchTimeout;
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            applyFiltersAndDisplay();
-        }, 300);
+        searchTimeout = setTimeout(() => applyFiltersAndDisplay(), 300);
     });
 
     categoryFilter.addEventListener('change', applyFiltersAndDisplay);
@@ -229,10 +235,10 @@ function setupSearchAndFilters() {
         searchInput.value = '';
         categoryFilter.value = '';
         sortFilter.value = 'newest';
+        history.replaceState(null, '', window.location.pathname);
         applyFiltersAndDisplay();
     });
 
-    // Close modal on escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && document.getElementById('postModal').classList.contains('active')) {
             closeModal();
@@ -240,20 +246,17 @@ function setupSearchAndFilters() {
     });
 }
 
-// Update results count
+// ── UTILS ─────────────────────────────────────────────────────────────────────
 function updateResultsCount(count) {
-    const resultsCount = document.getElementById('resultsCount');
-    resultsCount.textContent = `${count} project${count !== 1 ? 's' : ''} found`;
+    document.getElementById('resultsCount').textContent = `${count} project${count !== 1 ? 's' : ''} found`;
 }
 
-// Truncate text
 function truncateText(text, maxLength) {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
 
-// Escape HTML
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -261,32 +264,17 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// View image full size
-window.viewImageFullSize = function(imageSrc) {
+// ── FULL SIZE IMAGE VIEWER ────────────────────────────────────────────────────
+window.viewImageFullSize = function (imageSrc) {
     const viewer = document.createElement('div');
-    viewer.id = 'imageViewer';
-    viewer.style.cssText = `
-        display: flex;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.95);
-        z-index: 10000;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-    `;
+    viewer.style.cssText = `display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;align-items:center;justify-content:center;padding:2rem;`;
     viewer.innerHTML = `
-        <button onclick="this.parentElement.remove(); document.body.style.overflow='hidden';" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 2rem; width: 50px; height: 50px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
-        <img src="${imageSrc}" style="max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 8px;">
+        <button onclick="this.parentElement.remove();document.body.style.overflow='auto';"
+            style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);color:white;font-size:2rem;width:50px;height:50px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
+        <img src="${imageSrc}" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:8px;">
     `;
     viewer.onclick = (e) => {
-        if (e.target === viewer) {
-            viewer.remove();
-            document.body.style.overflow = 'hidden';
-        }
+        if (e.target === viewer) { viewer.remove(); document.body.style.overflow = 'auto'; }
     };
     document.body.appendChild(viewer);
 };
