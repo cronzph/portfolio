@@ -555,6 +555,10 @@ function editPost(postId) {
     document.querySelector('#addPostModal .modal-header h2').textContent = 'Edit Post';
     document.getElementById('submitBtnText').textContent = 'Update Post';
 
+    // Re-enable submit button in case it was disabled from a previous session
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.disabled = false;
+
     updateEditImagePreviews();
 
     if (bannerCropOriginalSrc) {
@@ -944,6 +948,11 @@ function openAddPostModal() {
     _formSaved = false;
     document.querySelector('#addPostModal .modal-header h2').textContent = 'Add New Post';
     document.getElementById('submitBtnText').textContent = 'Create Post';
+
+    // Re-enable submit button in case it was disabled from a previous session
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) submitBtn.disabled = false;
+
     renderCategoryCheckboxes();
     document.getElementById('addPostModal').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -1113,7 +1122,7 @@ function setupPostForm() {
             bannerCropOriginalSrc = editExistingBanner.data;
         }
 
-        // Lock the button for the entire operation — never re-enable on success
+        // Lock the button for the entire operation — re-enabled in resetForm on success
         submitBtn.disabled = true;
         submitBtnText.textContent = editMode ? 'Updating...' : 'Creating...';
         messageDiv.innerHTML = '';
@@ -1151,8 +1160,7 @@ function setupPostForm() {
                 messageDiv.innerHTML = '<div class="success">✓ Post created successfully!</div>';
             }
 
-            // Mark as saved so closeAddPostModal skips the "unsaved changes" prompt,
-            // then reset the form state immediately to prevent duplicate submissions
+            // Mark as saved, reset form (which re-enables the button), then close
             _formSaved = true;
             resetForm();
             setTimeout(() => closeAddPostModalSilent(), 1500);
@@ -1182,6 +1190,13 @@ function resetForm() {
     document.getElementById('formMessage').innerHTML = '';
     document.getElementById('imagePreviews').innerHTML = '';
     document.getElementById('bannerPreview').innerHTML = '';
+
+    // ✅ FIX: Re-enable submit button so the next open is ready
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    if (submitBtn) submitBtn.disabled = false;
+    if (submitBtnText) submitBtnText.textContent = 'Create Post';
+
     selectedFiles = [];
     bannerImage = null;
     bannerCropOriginalSrc = null;

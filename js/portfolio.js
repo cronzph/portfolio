@@ -3,7 +3,9 @@ import { database } from './firebase-config.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
 let allPosts = {};
-let allHighlights = {}; // { category: postId }
+let allHighlights = {};
+let postsLoaded = false;
+let highlightsLoaded = false;
 
 // ── TYPING EFFECT ─────────────────────────────────────────────────────────────
 const typingText = document.getElementById('typingText');
@@ -73,6 +75,12 @@ function escapeHtml(text) {
 }
 
 // ── RENDER HIGHLIGHTS ─────────────────────────────────────────────────────────
+// Only called once BOTH posts and highlights have loaded at least once
+function maybeRender() {
+    if (!postsLoaded || !highlightsLoaded) return;
+    renderHighlights();
+}
+
 function renderHighlights() {
     const grid = document.getElementById('highlightsGrid');
     if (!grid) return;
@@ -83,6 +91,7 @@ function renderHighlights() {
     CATEGORIES.forEach(cat => {
         const catCount = postsArray.filter(p => postMatchesCategory(p, cat)).length;
 
+        // Look up the highlighted post ID for this category
         let post = null;
         const highlightedId = allHighlights[cat];
         if (highlightedId && allPosts[highlightedId]) {
@@ -107,6 +116,11 @@ function buildHighlightCard(cat, post, catCount) {
     const accentColor = CAT_COLORS[cat] || '#94a3b8';
     const countBadge = `<span style="font-size:0.68rem;font-weight:600;padding:0.2rem 0.55rem;border-radius:99px;background:${accentColor}22;color:${accentColor};border:1px solid ${accentColor}44;white-space:nowrap;">${catCount} project${catCount !== 1 ? 's' : ''}</span>`;
 
+    // What to show when no highlight is set for this category
+    const noHighlightMsg = catCount > 0
+        ? 'No highlight project set for this category yet.'
+        : 'No project added yet for this category.';
+
     card.innerHTML = `
         ${thumb}
         <div class="highlight-body">
@@ -115,7 +129,7 @@ function buildHighlightCard(cat, post, catCount) {
                 ${countBadge}
             </div>
             <p class="highlight-title">${post ? escapeHtml(post.title) : 'Coming Soon'}</p>
-            <p class="highlight-desc">${post ? escapeHtml(truncateText(post.description, 100)) : 'No project added yet for this category.'}</p>
+            <p class="highlight-desc">${post ? escapeHtml(truncateText(post.description, 100)) : noHighlightMsg}</p>
             <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-top:1rem;">
                 ${post ? `<button class="highlight-view-btn" data-postid="${post.id}" style="background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">View Project ${arrow()}</button>` : ''}
                 <a href="all-posts.html?cat=${encodeURIComponent(cat)}" class="highlight-view-btn" style="opacity:${post ? '0.6' : '1'};">Browse All ${arrow()}</a>
@@ -136,17 +150,23 @@ function buildHighlightCard(cat, post, catCount) {
 
 // ── LOAD DATA ─────────────────────────────────────────────────────────────────
 function loadPortfolio() {
+    // Load highlights — keyed by catToKey but each record stores the real category name
     onValue(ref(database, 'highlights'), (snap) => {
         allHighlights = {};
         if (snap.exists()) {
             snap.forEach(child => {
                 const data = child.val();
-                if (data) allHighlights[data.category] = data.postId;
+                // data.category is the original string e.g. "Web Development"
+                if (data && data.category && data.postId) {
+                    allHighlights[data.category] = data.postId;
+                }
             });
         }
-        renderHighlights();
+        highlightsLoaded = true;
+        maybeRender();
     });
 
+    // Load posts
     onValue(ref(database, 'posts'), (snapshot) => {
         allPosts = {};
         if (snapshot.exists()) {
@@ -156,7 +176,8 @@ function loadPortfolio() {
             });
         }
         window.portfolioPosts = Object.values(allPosts).sort((a, b) => b.createdAt - a.createdAt);
-        renderHighlights();
+        postsLoaded = true;
+        maybeRender();
     }, (error) => {
         console.error('Error loading portfolio:', error);
         const grid = document.getElementById('highlightsGrid');

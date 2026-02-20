@@ -5,58 +5,45 @@ import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase
 import { loadSidebar } from './sidebar-loader.js';
 
 let currentUser = null;
-let postsChart = null;
-let categoryChart = null;
+let postsChartInstance = null;
+let categoryChartInstance = null;
 
 // Make functions globally available
 window.logout = logout;
 
+const ALL_CATEGORIES = [
+    'Web Development', 'Mobile Development', 'Arduino / IoT', 'Networking',
+    'Cyber Security', 'IT Support', 'AI Automation', 'Game Development', 'Smart Systems',
+];
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Hide both views initially to prevent flash
-    document.getElementById('loginView').style.display = 'none';
-    document.getElementById('adminView').style.display = 'none';
-    
     setupAuthStateListener();
     setupLoginForm();
 });
 
-// Auth state observer
+// ── AUTH ──────────────────────────────────────────────────────────────────────
 function setupAuthStateListener() {
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
-        
+
         if (user) {
-            await loadSidebar(); // Load sidebar before showing the view
+            await loadSidebar();
             showView('adminView');
             document.getElementById('userEmail').textContent = user.email;
             loadStats();
-            loadRecentPosts();
         } else {
             showView('loginView');
         }
     });
 }
 
-// Show specific view
 function showView(viewId) {
-    const loginView = document.getElementById('loginView');
-    const adminView = document.getElementById('adminView');
-    
-    if (viewId === 'adminView') {
-        loginView.style.display = 'none';
-        loginView.classList.remove('active');
-        adminView.style.display = 'flex';
-        adminView.classList.add('active');
-    } else {
-        adminView.style.display = 'none';
-        adminView.classList.remove('active');
-        loginView.style.display = 'flex';
-        loginView.classList.add('active');
-    }
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
 }
 
-// Login form handler
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
 function setupLoginForm() {
     const form = document.getElementById('loginForm');
     const errorDiv = document.getElementById('loginError');
@@ -76,17 +63,10 @@ function setupLoginForm() {
             errorDiv.innerHTML = '<div class="success">Login successful! Redirecting...</div>';
         } catch (error) {
             let errorMessage = 'Login failed. Please try again.';
-            
-            if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Invalid email address.';
-            } else if (error.code === 'auth/user-not-found') {
-                errorMessage = 'No account found with this email.';
-            } else if (error.code === 'auth/wrong-password') {
-                errorMessage = 'Incorrect password.';
-            } else if (error.code === 'auth/invalid-credential') {
-                errorMessage = 'Invalid credentials. Please check your email and password.';
-            }
-            
+            if (error.code === 'auth/invalid-email')           errorMessage = 'Invalid email address.';
+            else if (error.code === 'auth/user-not-found')     errorMessage = 'No account found with this email.';
+            else if (error.code === 'auth/wrong-password')     errorMessage = 'Incorrect password.';
+            else if (error.code === 'auth/invalid-credential') errorMessage = 'Invalid credentials. Please check your email and password.';
             errorDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
         } finally {
             submitBtn.disabled = false;
@@ -95,270 +75,224 @@ function setupLoginForm() {
     });
 }
 
-// Logout function
+// ── LOGOUT ────────────────────────────────────────────────────────────────────
 function logout() {
     if (confirm('Are you sure you want to logout?')) {
-        signOut(auth).then(() => {
-            window.location.href = 'admin.html';
-        }).catch((error) => {
-            console.error('Logout error:', error);
-        });
+        signOut(auth)
+            .then(() => { window.location.href = 'admin.html'; })
+            .catch(console.error);
     }
 }
 
-// Load stats and initialize charts
+// ── STATS + CHARTS ────────────────────────────────────────────────────────────
 function loadStats() {
     const postsRef = ref(database, 'posts');
-    
+
     onValue(postsRef, (snapshot) => {
         if (!snapshot.exists()) {
-            document.getElementById('totalPosts').textContent = '0';
+            document.getElementById('totalPosts').textContent  = '0';
             document.getElementById('totalImages').textContent = '0';
             document.getElementById('recentPosts').textContent = '0';
-            document.getElementById('totalViews').textContent = '0';
-            
-            // Initialize empty charts
-            initializeCharts([], []);
+            renderRecentPosts([]);
+            renderPostsChart([]);
+            renderCategoryChart({});
             return;
         }
 
         const posts = [];
-        snapshot.forEach((childSnapshot) => {
-            const postData = childSnapshot.val();
-            posts.push({
-                id: childSnapshot.key,
-                ...postData
-            });
+        snapshot.forEach((child) => {
+            posts.push({ id: child.key, ...child.val() });
         });
 
-        // Total posts
+        // ── Stat cards ──────────────────────────────────────
         document.getElementById('totalPosts').textContent = posts.length;
 
-        // Total images
-        const totalImages = posts.reduce((sum, post) => sum + (post.imageCount || 0), 0);
-        document.getElementById('totalImages').textContent = totalImages;
+        // Count posts that have a banner or any images
+        const withImages = posts.filter(p => p.bannerImage || p.imageData || (p.images && p.images.length > 0)).length;
+        document.getElementById('totalImages').textContent = withImages;
 
-        // Recent posts (last 7 days)
-        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-        const recentPostsCount = posts.filter(p => p.createdAt >= sevenDaysAgo).length;
-        document.getElementById('recentPosts').textContent = recentPostsCount;
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const recent = posts.filter(p => p.createdAt >= sevenDaysAgo).length;
+        document.getElementById('recentPosts').textContent = recent;
 
-        // Total views
-        const totalViews = posts.reduce((sum, p) => sum + (p.views || 0), 0);
-        document.getElementById('totalViews').textContent = totalViews;
+        // ── Charts ──────────────────────────────────────────
+        renderPostsChart(posts);
+        renderCategoryChart(buildCategoryCounts(posts));
 
-        // Prepare data for charts
-        const monthlyData = getMonthlyPostsData(posts);
-        const categoryData = getCategoryData(posts);
-
-        // Initialize charts with data
-        initializeCharts(monthlyData, categoryData);
+        // ── Recent posts list ───────────────────────────────
+        const sorted = [...posts].sort((a, b) => b.createdAt - a.createdAt);
+        renderRecentPosts(sorted.slice(0, 5));
     });
 }
 
-// Get monthly posts data for line chart
-function getMonthlyPostsData(posts) {
-    const months = {};
-    const now = new Date();
-    
-    // Initialize last 6 months
+// Build category → count map, supports both single `category` and `categories` array
+function buildCategoryCounts(posts) {
+    const counts = {};
+    ALL_CATEGORIES.forEach(cat => { counts[cat] = 0; });
+
+    posts.forEach(post => {
+        const cats = Array.isArray(post.categories)
+            ? post.categories
+            : (post.category ? [post.category] : []);
+        cats.forEach(cat => {
+            if (counts[cat] !== undefined) counts[cat]++;
+            else counts[cat] = 1; // handle any unknown category gracefully
+        });
+    });
+
+    return counts;
+}
+
+// ── POSTS OVERVIEW CHART (bar — posts per month, last 6 months) ──────────────
+function renderPostsChart(posts) {
+    const ctx = document.getElementById('postsChart');
+    if (!ctx) return;
+
+    // Build last 6 months labels + counts
+    const months = [];
+    const counts = [];
     for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        months[key] = 0;
-    }
-    
-    // Count posts per month
-    posts.forEach(post => {
-        const date = new Date(post.createdAt);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        if (months.hasOwnProperty(key)) {
-            months[key]++;
-        }
-    });
-    
-    return Object.entries(months).map(([key, count]) => {
-        const [year, month] = key.split('-');
-        const date = new Date(year, parseInt(month) - 1);
-        return {
-            label: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-            count: count
-        };
-    });
-}
-
-// Get category data for pie chart
-function getCategoryData(posts) {
-    const categories = {};
-    
-    posts.forEach(post => {
-        const category = post.category || 'Uncategorized';
-        categories[category] = (categories[category] || 0) + 1;
-    });
-    
-    return Object.entries(categories).map(([name, count]) => ({
-        name,
-        count
-    }));
-}
-
-// Initialize charts
-function initializeCharts(monthlyData, categoryData) {
-    // Destroy existing charts if they exist
-    if (postsChart) {
-        postsChart.destroy();
-    }
-    if (categoryChart) {
-        categoryChart.destroy();
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+        months.push(label);
+        const start = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+        const end   = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+        counts.push(posts.filter(p => p.createdAt >= start && p.createdAt <= end).length);
     }
 
-    // Posts Overview Chart (Line Chart)
-    const postsCtx = document.getElementById('postsChart');
-    if (postsCtx) {
-        postsChart = new Chart(postsCtx, {
-            type: 'line',
-            data: {
-                labels: monthlyData.map(d => d.label),
-                datasets: [{
-                    label: 'Posts Created',
-                    data: monthlyData.map(d => d.count),
-                    borderColor: '#6366f1',
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    }
+    if (postsChartInstance) postsChartInstance.destroy();
+    postsChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Posts',
+                data: counts,
+                backgroundColor: 'rgba(79,158,255,0.25)',
+                borderColor: '#4f9eff',
+                borderWidth: 2,
+                borderRadius: 6,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, color: '#94a3b8' },
+                    grid: { color: 'rgba(255,255,255,0.05)' },
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Category Chart (Doughnut Chart)
-    const categoryCtx = document.getElementById('categoryChart');
-    if (categoryCtx) {
-        categoryChart = new Chart(categoryCtx, {
-            type: 'doughnut',
-            data: {
-                labels: categoryData.map(d => d.name),
-                datasets: [{
-                    data: categoryData.map(d => d.count),
-                    backgroundColor: [
-                        '#6366f1',
-                        '#8b5cf6',
-                        '#ec4899',
-                        '#f59e0b',
-                        '#10b981',
-                        '#3b82f6'
-                    ]
-                }]
+                x: {
+                    ticks: { color: '#94a3b8' },
+                    grid: { display: false },
+                },
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 1.5,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-    }
+        },
+    });
 }
 
-// Load recent posts
-function loadRecentPosts() {
-    const postsRef = ref(database, 'posts');
-    const list = document.getElementById('recentPostsList');
-    
-    if (!list) {
+// ── CATEGORY CHART (doughnut) ─────────────────────────────────────────────────
+function renderCategoryChart(counts) {
+    const ctx = document.getElementById('categoryChart');
+    if (!ctx) return;
+
+    // Only show categories that have at least 1 post
+    const labels = Object.keys(counts).filter(k => counts[k] > 0);
+    const data   = labels.map(k => counts[k]);
+
+    const COLORS = {
+        'Web Development':    '#4f9eff',
+        'Mobile Development': '#a78bfa',
+        'Arduino / IoT':      '#34d399',
+        'Networking':         '#f59e0b',
+        'Cyber Security':     '#f87171',
+        'IT Support':         '#60a5fa',
+        'AI Automation':      '#e879f9',
+        'Game Development':   '#fb923c',
+        'Smart Systems':      '#2dd4bf',
+    };
+    const backgroundColors = labels.map(l => COLORS[l] || '#94a3b8');
+
+    if (categoryChartInstance) categoryChartInstance.destroy();
+
+    if (labels.length === 0) {
+        // Nothing to show yet
+        ctx.getContext('2d'); // keep canvas clean
         return;
     }
-    
-    onValue(postsRef, (snapshot) => {
-        list.innerHTML = '';
 
-        if (!snapshot.exists()) {
-            list.innerHTML = '<div class="empty-state"><p>No posts yet. <a href="admin-posts.html" style="color: var(--accent-primary);">Create your first post!</a></p></div>';
-            return;
-        }
-
-        const posts = [];
-        snapshot.forEach((childSnapshot) => {
-            posts.push({
-                id: childSnapshot.key,
-                ...childSnapshot.val()
-            });
-        });
-
-        // Sort by newest first and take only 5
-        posts.sort((a, b) => b.createdAt - a.createdAt);
-        const recentPosts = posts.slice(0, 5);
-
-        recentPosts.forEach(post => {
-            const item = createRecentPostItem(post);
-            list.appendChild(item);
-        });
+    categoryChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: backgroundColors.map(c => c + '99'), // 60% opacity fill
+                borderColor:     backgroundColors,
+                borderWidth: 2,
+                hoverOffset: 6,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#94a3b8',
+                        padding: 12,
+                        font: { size: 12 },
+                        boxWidth: 12,
+                        boxHeight: 12,
+                    },
+                },
+            },
+        },
     });
 }
 
-// Create recent post item
-function createRecentPostItem(post) {
-    const item = document.createElement('div');
-    item.className = 'recent-post-item';
+// ── RECENT POSTS LIST ─────────────────────────────────────────────────────────
+function renderRecentPosts(posts) {
+    const container = document.getElementById('recentPostsList');
+    if (!container) return;
 
-    const date = new Date(post.createdAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-    });
+    if (posts.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No posts yet.</p></div>';
+        return;
+    }
 
-    const firstImage = post.images && post.images.length > 0 ? post.images[0].data : null;
-    const imageCount = post.imageCount || 0;
+    container.innerHTML = posts.map(post => {
+        const date = new Date(post.createdAt).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric',
+        });
 
-    item.innerHTML = `
-        <div class="recent-post-image">
-            ${firstImage ? `
-                <img src="${firstImage}" alt="${escapeHtml(post.title)}">
-                ${imageCount > 1 ? `<span class="image-count">+${imageCount - 1}</span>` : ''}
-            ` : '<div class="no-image-placeholder">📷</div>'}
-        </div>
-        <div class="recent-post-info">
-            <h4>${escapeHtml(post.title)}</h4>
-            <p>${escapeHtml(post.description.substring(0, 80))}${post.description.length > 80 ? '...' : ''}</p>
-            <div class="recent-post-meta">
-                <span class="post-category">${post.category}</span>
-                <span class="post-date">${date}</span>
+        // Support both single category and categories array
+        const cats = Array.isArray(post.categories)
+            ? post.categories
+            : (post.category ? [post.category] : []);
+        const catBadges = cats
+            .map(c => `<span class="post-list-category" style="margin-right:0.3rem;">${escapeHtml(c)}</span>`)
+            .join('');
+
+        const thumb = post.bannerImage?.data || post.imageData || null;
+
+        return `
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.85rem 0;border-bottom:1px solid var(--border-color,rgba(255,255,255,0.07));">
+            ${thumb
+                ? `<img src="${thumb}" alt="${escapeHtml(post.title)}" style="width:64px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0;">`
+                : `<div style="width:64px;height:40px;border-radius:6px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">📁</div>`
+            }
+            <div style="flex:1;min-width:0;">
+                <p style="font-weight:600;color:var(--text-primary);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(post.title)}</p>
+                <div style="margin-top:0.25rem;">${catBadges}</div>
             </div>
-        </div>
-    `;
-
-    item.onclick = () => {
-        window.location.href = 'admin-posts.html';
-    };
-
-    return item;
+            <span style="font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;flex-shrink:0;">${date}</span>
+        </div>`;
+    }).join('');
 }
 
-// Escape HTML
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
