@@ -7,7 +7,19 @@ let allPosts = {};
 
 // Typing effect
 const typingText = document.getElementById('typingText');
-const roles = ['Editor', 'Developer', 'Creator', 'Innovator'];
+const roles = [
+  'Editor',
+  'Web Developer', 
+  'Mobile Developer',
+  'Creator',
+  'Innovator',
+  'Arduino Engineer',    
+  'Technical Support',  
+  'Systems Technician', 
+  'Network Engineer',    
+  'Cyber Security',     
+  'Software Engineer',  
+];
 let roleIndex = 0;
 let charIndex = 0;
 let isDeleting = false;

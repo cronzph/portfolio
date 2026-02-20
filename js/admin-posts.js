@@ -2,6 +2,7 @@
 import { auth, database } from './firebase-config.js';
 import { signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { ref, onValue, remove, push, update } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { loadSidebar } from './sidebar-loader.js';
 
 let currentUser = null;
 let currentModalPostId = null;
@@ -83,10 +84,11 @@ function closeImageViewer() {
 
 // Auth state observer
 function setupAuthStateListener() {
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         
         if (user) {
+            await loadSidebar(); // Load sidebar before rendering content
             document.getElementById('userEmail').textContent = user.email;
             loadAdminPosts();
         } else {

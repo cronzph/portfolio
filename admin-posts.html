@@ -9,27 +9,8 @@
 <body>
     <!-- Admin Panel View -->
     <div id="adminView" class="view active">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Admin Panel</h2>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="admin.html" class="nav-item">
-                    <span>📊</span> Dashboard
-                </a>
-                <a href="admin-posts.html" class="nav-item active">
-                    <span>📝</span> Posts
-                </a>
-               
-                <a href="index.html" class="nav-item">
-                    <span>🌐</span> View Portfolio
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <button class="btn btn-danger btn-block" onclick="logout()">Logout</button>
-            </div>
-        </aside>
+        <!-- Sidebar loaded from sidebar.html -->
+        <div id="sidebarContainer"></div>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -55,12 +36,13 @@
                         <div class="filter-controls">
                             <select id="categoryFilter" style="padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; cursor: pointer;">
                                 <option value="">All Categories</option>
-                                <option value="Web Design">Web Design</option>
-                                <option value="Mobile App">Mobile App</option>
-                                <option value="Branding">Branding</option>
+                                <option value="Web Development">Web Development</option>
+                                <option value="Mobile Development">Mobile Development</option>
+                                <option value="Arduino / IoT">Arduino / IoT</option>
+                                <option value="Networking">Networking</option>
+                                <option value="Cyber Security">Cyber Security</option>
+                                <option value="IT Support">IT Support</option>
                                 <option value="UI/UX">UI/UX</option>
-                                <option value="Illustration">Illustration</option>
-                                <option value="Photography">Photography</option>
                             </select>
                             <select id="sortFilter" style="padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; cursor: pointer;">
                                 <option value="newest">Newest First</option>
@@ -132,12 +114,13 @@
                             <label for="postCategory">Category *</label>
                             <select id="postCategory" required>
                                 <option value="">Select category</option>
-                                <option value="Web Design">Web Design</option>
-                                <option value="Mobile App">Mobile App</option>
-                                <option value="Branding">Branding</option>
+                                <option value="Web Development">Web Development</option>
+                                <option value="Mobile Development">Mobile Development</option>
+                                <option value="Arduino / IoT">Arduino / IoT</option>
+                                <option value="Networking">Networking</option>
+                                <option value="Cyber Security">Cyber Security</option>
+                                <option value="IT Support">IT Support</option>
                                 <option value="UI/UX">UI/UX</option>
-                                <option value="Illustration">Illustration</option>
-                                <option value="Photography">Photography</option>
                             </select>
                         </div>
                     </div>

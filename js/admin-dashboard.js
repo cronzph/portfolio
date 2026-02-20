@@ -2,6 +2,7 @@
 import { auth, database } from './firebase-config.js';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { loadSidebar } from './sidebar-loader.js';
 
 let currentUser = null;
 let postsChart = null;
@@ -22,10 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Auth state observer
 function setupAuthStateListener() {
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         
         if (user) {
+            await loadSidebar(); // Load sidebar before showing the view
             showView('adminView');
             document.getElementById('userEmail').textContent = user.email;
             loadStats();
