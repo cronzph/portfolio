@@ -1,9 +1,9 @@
-# Environment variables
+# Environment variables - keep secrets out of git
 .env
 
-# Node modules
+# Node modules (if any)
 node_modules/
 
-# Build files
-*.min.js
-*.min.css
+# OS files
+.DS_Store
+Thumbs.db

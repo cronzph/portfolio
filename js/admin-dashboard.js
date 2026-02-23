@@ -1,6 +1,6 @@
 // Admin Dashboard JavaScript
 import { auth, database } from './firebase-config.js';
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 import { loadSidebar } from './sidebar-loader.js';
 
@@ -19,7 +19,6 @@ const ALL_CATEGORIES = [
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupAuthStateListener();
-    setupLoginForm();
 });
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
@@ -29,48 +28,11 @@ function setupAuthStateListener() {
 
         if (user) {
             await loadSidebar();
-            showView('adminView');
             document.getElementById('userEmail').textContent = user.email;
             loadStats();
         } else {
-            showView('loginView');
-        }
-    });
-}
-
-function showView(viewId) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(viewId).classList.add('active');
-}
-
-// ── LOGIN ─────────────────────────────────────────────────────────────────────
-function setupLoginForm() {
-    const form = document.getElementById('loginForm');
-    const errorDiv = document.getElementById('loginError');
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const submitBtn = form.querySelector('button[type="submit"]');
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Logging in...';
-        errorDiv.innerHTML = '';
-
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            errorDiv.innerHTML = '<div class="success">Login successful! Redirecting...</div>';
-        } catch (error) {
-            let errorMessage = 'Login failed. Please try again.';
-            if (error.code === 'auth/invalid-email')           errorMessage = 'Invalid email address.';
-            else if (error.code === 'auth/user-not-found')     errorMessage = 'No account found with this email.';
-            else if (error.code === 'auth/wrong-password')     errorMessage = 'Incorrect password.';
-            else if (error.code === 'auth/invalid-credential') errorMessage = 'Invalid credentials. Please check your email and password.';
-            errorDiv.innerHTML = `<div class="error">${errorMessage}</div>`;
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Login';
+            // Redirect to login page if not authenticated
+            window.location.href = 'admin.html';
         }
     });
 }

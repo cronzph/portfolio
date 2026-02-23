@@ -94,8 +94,7 @@ body {
 
 /* Admin Layout */
 #adminView {
-    display: grid;
-    grid-template-columns: 280px 1fr;
+    display: flex;
     min-height: 100vh;
     width: 100%;
 }
@@ -172,7 +171,9 @@ body {
 .main-content {
     background: var(--bg-primary);
     overflow-y: auto;
-    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .top-bar {
