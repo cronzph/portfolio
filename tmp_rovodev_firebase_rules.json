@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "posts": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "highlights": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "views": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

@@ -539,6 +539,49 @@
 }
 
 /* Responsive Design */
+/* Large Screen Optimizations */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1400px;
+    }
+    
+    .portfolio-grid {
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 2rem;
+    }
+    
+    .search-filter-wrapper {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .filter-controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1800px) {
+    .container {
+        max-width: 1600px;
+    }
+    
+    .portfolio-grid {
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 2.5rem;
+    }
+    
+    .page-title {
+        font-size: 4rem;
+    }
+    
+    .page-subtitle {
+        font-size: 1.5rem;
+    }
+}
+
 @media (max-width: 1024px) {
     .portfolio-grid {
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

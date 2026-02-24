@@ -109,8 +109,8 @@ function openHighlightPicker(category) {
     list.innerHTML = '';
 
     const matching = Object.values(allPosts).filter(p => {
-        const cats = Array.isArray(p.categories) ? p.categories : [p.category];
-        return cats.some(c => c.toLowerCase() === category.toLowerCase());
+        const cats = Array.isArray(p.categories) ? p.categories : (p.category ? [p.category] : []);
+        return cats.some(c => c && c.toLowerCase() === category.toLowerCase());
     });
 
     if (matching.length === 0) {
@@ -206,8 +206,8 @@ function renderHighlightManager() {
         const post = postId ? allPosts[postId] : null;
         const imageUrl = post?.bannerImage?.data || (post?.images && post.images[0]?.data);
         const catPostCount = Object.values(allPosts).filter(p => {
-            const cats = Array.isArray(p.categories) ? p.categories : [p.category];
-            return cats.some(c => c.toLowerCase() === cat.toLowerCase());
+            const cats = Array.isArray(p.categories) ? p.categories : (p.category ? [p.category] : []);
+            return cats.some(c => c && c.toLowerCase() === cat.toLowerCase());
         }).length;
 
         return `
@@ -319,7 +319,16 @@ function showConfirm({ title = 'Are you sure?', message = '', confirmText = 'Con
 
         document.body.appendChild(modal);
 
+        const keydownHandler = (e) => {
+            if (e.key === 'Enter') {
+                cleanup(true);
+            } else if (e.key === 'Escape') {
+                cleanup(false);
+            }
+        };
+
         const cleanup = (result) => {
+            document.removeEventListener('keydown', keydownHandler);
             modal.style.opacity = '0';
             modal.style.transition = 'opacity 0.1s';
             setTimeout(() => modal.remove(), 100);
@@ -329,10 +338,7 @@ function showConfirm({ title = 'Are you sure?', message = '', confirmText = 'Con
         modal.querySelector('#confirmOkBtn').addEventListener('click', () => cleanup(true));
         modal.querySelector('#confirmCancelBtn').addEventListener('click', () => cleanup(false));
         modal.addEventListener('click', (e) => { if (e.target === modal) cleanup(false); });
-        document.addEventListener('keydown', function handler(e) {
-            if (e.key === 'Enter') { cleanup(true); document.removeEventListener('keydown', handler); }
-            if (e.key === 'Escape') { cleanup(false); document.removeEventListener('keydown', handler); }
-        });
+        document.addEventListener('keydown', keydownHandler);
 
         setTimeout(() => modal.querySelector('#confirmCancelBtn')?.focus(), 50);
     });
@@ -427,12 +433,12 @@ function applyFiltersAndDisplay() {
     filteredPosts = {};
     Object.keys(allPosts).forEach(key => {
         const post = allPosts[key];
-        const postCats = Array.isArray(post.categories) ? post.categories : [post.category].filter(Boolean);
+        const postCats = Array.isArray(post.categories) ? post.categories : (post.category ? [post.category] : []);
         const matchesSearch = !searchTerm ||
-            post.title.toLowerCase().includes(searchTerm) ||
-            post.description.toLowerCase().includes(searchTerm);
+            (post.title && post.title.toLowerCase().includes(searchTerm)) ||
+            (post.description && post.description.toLowerCase().includes(searchTerm));
         const matchesCategory = !categoryFilter ||
-            postCats.some(c => c.toLowerCase() === categoryFilter.toLowerCase());
+            postCats.some(c => c && c.toLowerCase() === categoryFilter.toLowerCase());
         if (matchesSearch && matchesCategory) filteredPosts[key] = post;
     });
 
@@ -489,7 +495,10 @@ function createPostListItem(post) {
 // ── VIEW POST ─────────────────────────────────────────────────────────────────
 function viewPost(postId) {
     const post = allPosts[postId];
-    if (!post) { alert('Post not found.'); return; }
+    if (!post) { 
+        showToast('⚠️ Post not found', 'error'); 
+        return; 
+    }
 
     currentModalPostId = postId;
     document.getElementById('modalTitle').textContent = post.title;
@@ -531,7 +540,10 @@ function viewPost(postId) {
 // ── EDIT POST ─────────────────────────────────────────────────────────────────
 function editPost(postId) {
     const post = allPosts[postId];
-    if (!post) { alert('Post not found.'); return; }
+    if (!post) { 
+        showToast('⚠️ Post not found', 'error'); 
+        return; 
+    }
 
     editMode = true;
     editingPostId = postId;
@@ -579,8 +591,16 @@ function setupBannerInput() {
     bannerInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        if (file.size > maxSize) { alert('Max size is 1MB'); bannerInput.value = ''; return; }
-        if (!file.type.startsWith('image/')) { alert('Not an image'); bannerInput.value = ''; return; }
+        if (file.size > maxSize) { 
+            showToast('⚠️ Banner image must be 1MB or less', 'error'); 
+            bannerInput.value = ''; 
+            return; 
+        }
+        if (!file.type.startsWith('image/')) { 
+            showToast('⚠️ Please select a valid image file', 'error'); 
+            bannerInput.value = ''; 
+            return; 
+        }
         bannerImage = file;
         bannerInput.value = '';
 
@@ -901,7 +921,10 @@ async function removeExistingImage(index) {
 // ── DELETE ────────────────────────────────────────────────────────────────────
 async function deletePost(postId) {
     const post = allPosts[postId];
-    if (!post) { alert('Post not found.'); return; }
+    if (!post) { 
+        showToast('⚠️ Post not found', 'error'); 
+        return; 
+    }
     const ok = await showConfirm({
         title: 'Delete Post',
         message: `Are you sure you want to delete <strong style="color:var(--text-primary)">"${escapeHtml(post.title)}"</strong>?`,
@@ -1039,12 +1062,24 @@ function setupFileInput() {
         const maxFiles = 5;
         const maxSize = 1 * 1024 * 1024;
         const totalImages = editExistingImages.length + selectedFiles.length + files.length;
-        if (totalImages > maxFiles) { alert(`Max ${maxFiles} images total`); fileInput.value = ''; return; }
+        if (totalImages > maxFiles) { 
+            showToast(`⚠️ Maximum ${maxFiles} images allowed`, 'error'); 
+            fileInput.value = ''; 
+            return; 
+        }
 
         let hasErrors = false;
         files.forEach(file => {
-            if (file.size > maxSize) { alert(`${file.name} is too large (max 1MB)`); hasErrors = true; return; }
-            if (!file.type.startsWith('image/')) { alert(`${file.name} is not an image`); hasErrors = true; return; }
+            if (file.size > maxSize) { 
+                showToast(`⚠️ ${file.name} exceeds 1MB limit`, 'error'); 
+                hasErrors = true; 
+                return; 
+            }
+            if (!file.type.startsWith('image/')) { 
+                showToast(`⚠️ ${file.name} is not a valid image`, 'error'); 
+                hasErrors = true; 
+                return; 
+            }
             selectedFiles.push(file);
         });
 
@@ -1098,7 +1133,10 @@ function setupPostForm() {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!currentUser) { alert('You must be logged in'); return; }
+        if (!currentUser) { 
+            showToast('⚠️ You must be logged in to create posts', 'error'); 
+            return; 
+        }
 
         const title = document.getElementById('postTitle').value.trim();
         const categories = getSelectedCategories();

@@ -53,6 +53,7 @@ function loadStats() {
     onValue(postsRef, (snapshot) => {
         if (!snapshot.exists()) {
             document.getElementById('totalPosts').textContent  = '0';
+            document.getElementById('totalCategories').textContent = '0';
             document.getElementById('totalImages').textContent = '0';
             document.getElementById('recentPosts').textContent = '0';
             renderRecentPosts([]);
@@ -69,6 +70,11 @@ function loadStats() {
         // ── Stat cards ──────────────────────────────────────
         document.getElementById('totalPosts').textContent = posts.length;
 
+        // Count unique categories used
+        const categoryCounts = buildCategoryCounts(posts);
+        const categoriesUsed = Object.values(categoryCounts).filter(count => count > 0).length;
+        document.getElementById('totalCategories').textContent = categoriesUsed;
+
         // Count posts that have a banner or any images
         const withImages = posts.filter(p => p.bannerImage || p.imageData || (p.images && p.images.length > 0)).length;
         document.getElementById('totalImages').textContent = withImages;
@@ -84,6 +90,28 @@ function loadStats() {
         // ── Recent posts list ───────────────────────────────
         const sorted = [...posts].sort((a, b) => b.createdAt - a.createdAt);
         renderRecentPosts(sorted.slice(0, 5));
+    });
+
+    // Load total views
+    loadTotalViews();
+}
+
+// ── LOAD TOTAL VIEWS ──────────────────────────────────────────────────────────
+function loadTotalViews() {
+    const viewsRef = ref(database, 'views');
+    
+    onValue(viewsRef, (snapshot) => {
+        let totalViews = 0;
+        
+        if (snapshot.exists()) {
+            snapshot.forEach((postChild) => {
+                postChild.forEach((viewChild) => {
+                    totalViews++;
+                });
+            });
+        }
+        
+        document.getElementById('totalViews').textContent = totalViews.toLocaleString();
     });
 }
 

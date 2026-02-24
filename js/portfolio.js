@@ -1,6 +1,7 @@
 // Portfolio Page JavaScript
 import { database } from './firebase-config.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { ref as dbRef, push, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
 let allPosts = {};
 let allHighlights = {};
@@ -190,6 +191,9 @@ function openPostModal(postId) {
     const post = allPosts[postId];
     if (!post) return;
 
+    // Track view
+    trackPostView(postId);
+
     let modal = document.getElementById('postViewModal');
     if (!modal) { modal = createPostModal(); document.body.appendChild(modal); }
 
@@ -287,11 +291,42 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-        window.closePostModal();
+        const modal = document.getElementById('postViewModal');
+        if (modal && modal.classList.contains('active')) {
+            window.closePostModal();
+        }
         const imageViewer = document.getElementById('imageViewer');
         if (imageViewer) { imageViewer.remove(); document.body.style.overflow = 'auto'; }
     }
 });
 
+// ── VIEW TRACKING ─────────────────────────────────────────────────────────────
+function trackPostView(postId) {
+    try {
+        console.log('📊 Tracking view for post:', postId);
+        const viewData = {
+            postId: postId,
+            timestamp: Date.now(), // Use Date.now() instead of serverTimestamp() for testing
+            page: 'portfolio'
+        };
+        const viewRef = dbRef(database, `views/${postId}`);
+        console.log('📊 Pushing to Firebase:', viewData);
+        push(viewRef, viewData)
+            .then(() => {
+                console.log('✅ View tracked successfully!');
+            })
+            .catch((error) => {
+                console.error('❌ Error pushing view:', error);
+            });
+    } catch (error) {
+        console.error('❌ Error tracking view:', error);
+    }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => loadPortfolio());
+document.addEventListener('DOMContentLoaded', () => {
+    loadPortfolio();
+    import('./theme-manager.js').then(() => {
+        // Theme manager will initialize itself
+    }).catch(console.error);
+});

@@ -1,6 +1,7 @@
 // All Posts Page JavaScript
 import { database } from './firebase-config.js';
 import { ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { ref as dbRef, push, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
 let allPosts = {};
 let filteredPosts = {};
@@ -160,6 +161,9 @@ function openPostDetail(postId) {
     const post = allPosts[postId];
     if (!post) return;
 
+    // Track view
+    trackPostView(postId);
+
     currentModalPost = post;
 
     document.getElementById('modalTitle').textContent = post.title;
@@ -262,6 +266,29 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ── VIEW TRACKING ─────────────────────────────────────────────────────────────
+function trackPostView(postId) {
+    try {
+        console.log('📊 Tracking view for post:', postId);
+        const viewData = {
+            postId: postId,
+            timestamp: Date.now(), // Use Date.now() instead of serverTimestamp() for testing
+            page: 'all-posts'
+        };
+        const viewRef = dbRef(database, `views/${postId}`);
+        console.log('📊 Pushing to Firebase:', viewData);
+        push(viewRef, viewData)
+            .then(() => {
+                console.log('✅ View tracked successfully!');
+            })
+            .catch((error) => {
+                console.error('❌ Error pushing view:', error);
+            });
+    } catch (error) {
+        console.error('❌ Error tracking view:', error);
+    }
 }
 
 // ── FULL SIZE IMAGE VIEWER ────────────────────────────────────────────────────
