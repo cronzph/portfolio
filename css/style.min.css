@@ -301,13 +301,19 @@
 }
 
 [data-theme="light"] .typing-text {
-    color: #00ff88;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     text-shadow: none;
     font-weight: 900;
 }
 
 [data-theme="light"] .im-a {
-    color: #ffffff;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     text-shadow: none;
     font-weight: 600;
 }
@@ -628,7 +634,7 @@ html {
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-weight: 600;
+    font-weight: 900;
     min-width: 200px;
     animation: blink 0.7s step-end infinite;
 }
@@ -693,6 +699,7 @@ section {
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    font-weight: 800;
 }
 
 .section-subtitle {

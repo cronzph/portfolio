@@ -13,6 +13,21 @@
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
             margin-top: 3rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @media (min-width: 1024px) {
+            .highlights-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (min-width: 641px) and (max-width: 1023px) {
+            .highlights-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         .highlight-card {

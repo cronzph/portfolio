@@ -747,7 +747,7 @@ html {
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-weight: 600;
+    font-weight: 900;
     min-width: 200px;
     animation: blink 0.7s step-end infinite;
 }
@@ -812,6 +812,7 @@ section {
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    font-weight: 800;
 }
 
 .section-subtitle {

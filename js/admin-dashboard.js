@@ -72,8 +72,6 @@ function loadStats() {
 
         // Count unique categories used
         const categoryCounts = buildCategoryCounts(posts);
-        const categoriesUsed = Object.values(categoryCounts).filter(count => count > 0).length;
-        document.getElementById('totalCategories').textContent = categoriesUsed;
 
         // Count posts that have a banner or any images
         const withImages = posts.filter(p => p.bannerImage || p.imageData || (p.images && p.images.length > 0)).length;
