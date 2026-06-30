@@ -3,8 +3,7 @@
     "private": true,
     "scripts": {
         "dev": "cd react-app && npm run dev",
-        "build": "cd react-app && npm run build",
-        "preview": "cd react-app && npm run preview",
-        "install": "cd react-app && npm install"
+        "build": "cd react-app && npm install && npm run build",
+        "preview": "cd react-app && npm run preview"
     }
 }
