@@ -146,7 +146,7 @@ export default function Home() {
                             <a href="#portfolio" className="btn btn-primary">View My Work</a>
                         </div>
                         <div className="hero-image">
-                            <img src="/me.jpg" alt="Profile Picture" loading="lazy" />
+                            <img src="/me.jpg" alt="Profile Picture" fetchpriority="high" decoding="async" />
                         </div>
                     </div>
                 </div>
