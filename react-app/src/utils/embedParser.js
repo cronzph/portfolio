@@ -16,9 +16,12 @@ export function parseEmbedUrl(url) {
     const ytBe = trimmed.match(/youtu\.be\/([\w-]{11})/);
     if (ytBe) return { platform: 'youtube', embedId: ytBe[1], embedUrl: `https://www.youtube.com/embed/${ytBe[1]}`, aspectRatio: '16/9' };
 
-    // TikTok: @user/video/ID
+    // TikTok: @user/video/ID or vt.tiktok.com short link
     const tt = trimmed.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/);
     if (tt) return { platform: 'tiktok', embedId: tt[1], embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}`, aspectRatio: '9/16' };
+
+    const ttShort = trimmed.match(/vt\.tiktok\.com\/([\w-]+)/);
+    if (ttShort) return { platform: 'tiktok', embedId: null, embedUrl: null, aspectRatio: '9/16' };
 
     // Facebook: reel, share/r, watch, fb.watch
     const fbReel = trimmed.match(/facebook\.com\/reel\/(\d+)/);
