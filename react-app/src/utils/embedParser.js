@@ -20,9 +20,12 @@ export function parseEmbedUrl(url) {
     const tt = trimmed.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/);
     if (tt) return { platform: 'tiktok', embedId: tt[1], embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}`, aspectRatio: '9/16' };
 
-    // Facebook: reel, watch, fb.watch
+    // Facebook: reel, share/r, watch, fb.watch
     const fbReel = trimmed.match(/facebook\.com\/reel\/(\d+)/);
     if (fbReel) return { platform: 'facebook', embedId: fbReel[1], embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(trimmed)}&show_text=false`, aspectRatio: '9/16' };
+
+    const fbShareR = trimmed.match(/facebook\.com\/share\/r\/([\w-]+)/);
+    if (fbShareR) return { platform: 'facebook', embedId: fbShareR[1], embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(trimmed)}&show_text=false`, aspectRatio: '9/16' };
 
     const fbWatch = trimmed.match(/facebook\.com\/watch\/?\?v=(\d+)/);
     if (fbWatch) return { platform: 'facebook', embedId: fbWatch[1], embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(trimmed)}&show_text=false`, aspectRatio: '16/9' };
