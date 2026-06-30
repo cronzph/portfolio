@@ -1449,12 +1449,30 @@ section {
 }
 
 .modal-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: row;
   gap: 1.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5rem;
+}
+
+.modal-gallery-grid::-webkit-scrollbar {
+  height: 6px;
+}
+
+.modal-gallery-grid::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.modal-gallery-grid::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border-radius: 3px;
 }
 
 .modal-gallery-item {
+  flex: 0 0 280px;
   aspect-ratio: 16/9;
   border-radius: 12px;
   overflow: hidden;
@@ -2008,10 +2026,6 @@ section {
 
   .modal-header h2 {
     font-size: 1.5rem;
-  }
-
-  .modal-gallery-grid {
-    grid-template-columns: 1fr;
   }
 
   .modal-close {
