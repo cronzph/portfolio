@@ -1,9 +1,11 @@
 import { parseContentWithEmbeds } from '../utils/embedParser';
 import VideoEmbed from './VideoEmbed';
 
+const isHTML = str => /<[a-z][\s\S]*>/i.test(str);
+
 /**
  * Renders post content with auto-detected video embeds.
- * Plain text lines render as paragraphs; standalone video URLs render as embeds.
+ * If content contains HTML tags, renders as HTML; otherwise plain text.
  */
 export default function ContentRenderer({ content }) {
     if (!content) return null;
@@ -16,7 +18,11 @@ export default function ContentRenderer({ content }) {
                 if (seg.type === 'embed') {
                     return <VideoEmbed key={i} embed={seg.embed} originalUrl={seg.originalUrl} />;
                 }
-                // Render text with line breaks preserved
+                if (isHTML(seg.content)) {
+                    return (
+                        <div key={i} dangerouslySetInnerHTML={{ __html: seg.content }} />
+                    );
+                }
                 return (
                     <p key={i} style={{ whiteSpace: 'pre-line', lineHeight: 1.75, wordBreak: 'break-word', marginBottom: '1rem' }}>
                         {seg.content}
