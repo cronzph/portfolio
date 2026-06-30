@@ -1,347 +1,405 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio | CRONZPH</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>CronzPH — Hunter Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
-        .highlights-section { padding: 6rem 0; }
-
-        .highlights-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 3rem;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        @media (min-width: 1024px) {
-            .highlights-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        @media (min-width: 641px) and (max-width: 1023px) {
-            .highlights-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        :root {
+            --void: #08070d;
+            --void-2: #0d0c16;
+            --violet: #8b5cf6;
+            --violet-soft: #6d28d9;
+            --cyan: #22d3ee;
+            --ink: #e9e6f4;
+            --ink-dim: #8b85a3;
+            --line: #231f33;
+            --gold: #f5c34d;
         }
 
-        .highlight-card {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            background: var(--card-bg, #1a1a2e);
-            border: 1px solid rgba(255,255,255,0.07);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .highlight-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+        html,
+        body {
+            height: 100%;
         }
 
-        .highlight-card::before {
-            content: '';
-            display: block;
-            height: 4px;
-            width: 100%;
-            background: var(--accent-color);
-        }
-
-        .highlight-thumb {
-            width: 100%;
-            aspect-ratio: 16/9;
-            object-fit: cover;
-            display: block;
-        }
-
-        .highlight-thumb-placeholder {
-            width: 100%;
-            aspect-ratio: 16/9;
+        body {
+            background: var(--void);
+            color: var(--ink);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.07));
+            overflow-x: hidden;
+            position: relative;
+            padding: 32px 20px;
         }
 
-        .highlight-body {
-            padding: 1.25rem 1.4rem 1.5rem;
-            flex: 1;
+        /* ambient backdrop */
+        .field {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 700px 500px at 18% 12%, rgba(139, 92, 246, 0.18), transparent 60%),
+                radial-gradient(ellipse 600px 500px at 85% 88%, rgba(34, 211, 238, 0.10), transparent 60%),
+                var(--void);
+            z-index: 0;
+        }
+
+        .field::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: radial-gradient(ellipse 900px 700px at 50% 30%, black, transparent 75%);
+        }
+
+        .frame {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        /* eyebrow status line */
+        .status-line {
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .highlight-category-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12.5px;
+            letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: var(--accent-color);
+            color: var(--cyan);
+            margin-bottom: 18px;
+            opacity: 0;
+            animation: rise 0.6s ease forwards 0.1s;
         }
 
-        .highlight-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #f0f0f0;
-            margin: 0;
-            line-height: 1.4;
+        .status-line .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan), 0 0 16px var(--cyan);
+            animation: pulse 1.8s ease-in-out infinite;
         }
 
-        .highlight-desc {
-            font-size: 0.82rem;
-            color: rgba(255,255,255,0.5);
-            line-height: 1.5;
-            margin: 0;
-            flex: 1;
+        /* the panel */
+        .panel {
+            position: relative;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(20, 18, 33, 0.7), rgba(13, 12, 22, 0.85));
+            backdrop-filter: blur(6px);
+            padding: 44px 38px 36px;
+            clip-path: polygon(0 14px, 14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+            opacity: 0;
+            animation: rise 0.7s ease forwards 0.25s;
         }
 
-        .highlight-view-btn {
-            display: inline-flex;
+        .panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            clip-path: polygon(0 14px, 14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.55), rgba(34, 211, 238, 0.15) 40%, transparent 70%);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .corner-tag {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            color: var(--ink-dim);
+        }
+
+        h1 {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: clamp(34px, 6vw, 46px);
+            letter-spacing: 0.04em;
+            line-height: 1.05;
+            color: var(--ink);
+            text-shadow: 0 0 22px rgba(139, 92, 246, 0.35);
+        }
+
+        h1 span {
+            color: var(--violet);
+            -webkit-text-fill-color: var(--violet);
+        }
+
+        .rank {
+            margin-top: 10px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            letter-spacing: 0.1em;
+            color: var(--gold);
+            display: flex;
             align-items: center;
-            gap: 0.4rem;
-            margin-top: 1rem;
-            font-size: 0.78rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            color: var(--accent-color);
-            text-decoration: none;
-            transition: gap 0.2s ease;
+            gap: 8px;
         }
 
-        .highlight-view-btn:hover { gap: 0.7rem; }
-
-        .highlight-view-btn svg {
-            width: 14px; height: 14px;
-            stroke: currentColor; fill: none;
-            stroke-width: 2.5;
-            stroke-linecap: round; stroke-linejoin: round;
-            flex-shrink: 0;
+        .rank::before {
+            content: '';
+            width: 18px;
+            height: 1px;
+            background: var(--gold);
         }
 
-        .highlights-loading {
-            grid-column: 1 / -1;
+        p.tagline {
+            margin-top: 18px;
+            color: var(--ink-dim);
+            font-size: 15px;
+            line-height: 1.6;
+            max-width: 46ch;
+        }
+
+        /* nav / quest list */
+        .quests {
+            margin-top: 34px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 3rem;
-            gap: 1rem;
-            color: rgba(255,255,255,0.4);
+            gap: 10px;
         }
 
-        /* Accent colors per category */
-        .highlight-card[data-cat="Web Development"]      { --accent-color: #4f9eff; }
-        .highlight-card[data-cat="Mobile Development"]   { --accent-color: #a78bfa; }
-        .highlight-card[data-cat="Arduino / IoT"]        { --accent-color: #34d399; }
-        .highlight-card[data-cat="Networking"]           { --accent-color: #f59e0b; }
-        .highlight-card[data-cat="Cyber Security"]       { --accent-color: #f87171; }
-        .highlight-card[data-cat="IT Support"]           { --accent-color: #60a5fa; }
-        .highlight-card[data-cat="AI Automation"]        { --accent-color: #e879f9; }
-        .highlight-card[data-cat="Game Development"]     { --accent-color: #fb923c; }
-        .highlight-card[data-cat="Smart Systems"]        { --accent-color: #2dd4bf; }
+        .quest {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 18px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.015);
+            text-decoration: none;
+            color: var(--ink);
+            transition: border-color .25s ease, background .25s ease, transform .25s ease;
+            opacity: 0;
+            animation: rise 0.6s ease forwards;
+        }
 
-        @media (max-width: 640px) {
-            .highlights-grid { grid-template-columns: 1fr; }
+        .quest:nth-child(1) {
+            animation-delay: .4s;
+        }
+
+        .quest:nth-child(2) {
+            animation-delay: .5s;
+        }
+
+        .quest:nth-child(3) {
+            animation-delay: .6s;
+        }
+
+        .quest:not(.locked):hover {
+            border-color: rgba(139, 92, 246, 0.6);
+            background: rgba(139, 92, 246, 0.06);
+            transform: translateX(4px);
+        }
+
+        .quest .qleft {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .quest .idx {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 12px;
+            color: var(--ink-dim);
+            width: 22px;
+        }
+
+        .quest .label {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .quest .label .name {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 17px;
+            letter-spacing: 0.02em;
+        }
+
+        .quest .label .desc {
+            font-size: 12px;
+            color: var(--ink-dim);
+        }
+
+        .quest .arrow {
+            font-size: 16px;
+            color: var(--violet);
+            transition: transform .25s ease;
+        }
+
+        .quest:not(.locked):hover .arrow {
+            transform: translateX(4px);
+        }
+
+        .quest.locked {
+            cursor: default;
+            opacity: 0.5 !important;
+        }
+
+        .quest.locked .name {
+            color: var(--ink-dim);
+        }
+
+        .badge {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            padding: 3px 8px;
+            border: 1px solid var(--line);
+            color: var(--ink-dim);
+            text-transform: uppercase;
+        }
+
+        .badge.live {
+            color: var(--cyan);
+            border-color: rgba(34, 211, 238, 0.4);
+        }
+
+        footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            color: var(--ink-dim);
+            opacity: 0;
+            animation: rise 0.6s ease forwards 0.75s;
+        }
+
+        footer a {
+            color: var(--ink-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: var(--violet);
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        @media (max-width:480px) {
+            .panel {
+                padding: 34px 22px 28px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
         }
     </style>
 </head>
+
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand"><h2>CRONZPH</h2></div>
-            
-            <!-- Theme Toggle Button -->
-            <button id="themeToggle" class="theme-toggle" title="Toggle theme">
-                <span class="sun">☀️</span>
-                <span class="moon">🌙</span>
-            </button>
-            
-            <!-- Mobile Menu Toggle -->
-            <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle menu">
-                <span class="hamburger"></span>
-                <span class="hamburger"></span>
-                <span class="hamburger"></span>
-            </button>
-            
-            <!-- Navigation Links -->
-            <div class="nav-links" id="navLinks">
-                <a href="#home" class="nav-link">Home</a>
-                <a href="#portfolio" class="nav-link">Portfolio</a>
-                <a href="#about" class="nav-link">About</a>
-                <a href="#contact" class="nav-link">Contact</a>
-            </div>
+
+    <div class="field"></div>
+
+    <div class="frame">
+        <div class="status-line"><span class="dot"></span> SYSTEM — HUNTER PROFILE LOADED</div>
+
+        <div class="panel">
+            <span class="corner-tag">CRONZPH.OS</span>
+            <h1>Cronz<span>PH</span></h1>
+            <div class="rank">C-RANK HUNTER · WEB DEVELOPER</div>
+            <p class="tagline">Building tools, studios, and shops one dungeon at a time. Pick a destination to continue.
+            </p>
+
+            <nav class="quests">
+                <a href="https://cph-ai-portfolio.vercel.app/" class="quest" target="_blank" rel="noopener">
+                    <span class="qleft">
+                        <span class="idx">01</span>
+                        <span class="label">
+                            <span class="name">Hunter Portfolio</span>
+                            <span class="desc">Projects, devlogs, and the full record</span>
+                        </span>
+                    </span>
+                    <span class="arrow">→</span>
+                </a>
+
+                <a href="https://cronzph-agency.vercel.app" class="quest" target="_blank" rel="noopener">
+                    <span class="qleft">
+                        <span class="idx">02</span>
+                        <span class="label">
+                            <span class="name">CronzPH Labs</span>
+                            <span class="desc">Studio site — services &amp; client work</span>
+                        </span>
+                    </span>
+                    <span class="arrow">→</span>
+                </a>
+
+                <a href="#" class="quest locked" aria-disabled="true">
+                    <span class="qleft">
+                        <span class="idx">03</span>
+                        <span class="label">
+                            <span class="name">CronzPH Shop</span>
+                            <span class="desc">Templates, ebooks, digital goods</span>
+                        </span>
+                    </span>
+                    <span class="badge">Coming Soon</span>
+                </a>
+            </nav>
+
+            <footer>
+                <span>EST. CRONZPH OPC</span>
+                <a href="https://www.linkedin.com/in/mark-icel-sarmiento-8457b4417" target="_blank"
+                    rel="noopener">LinkedIn ↗</a>
+            </footer>
         </div>
-    </nav>
+    </div>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h1>Hi, I'm Mark Icel</h1>
-                    <div class="typing-container">
-                        <span class="im-a">I'm a</span>
-                        <span class="typing-text" id="typingText"></span>
-                    </div>
-                    <p class="hero-description">
-                        Passionate about creating innovative digital solutions and bringing ideas to life through code and design.
-                    </p>
-                    <a href="#portfolio" class="btn btn-primary">View My Work</a>
-                </div>
-                <div class="hero-image">
-                <img src="me.jpg" alt="Profile Picture" loading="lazy">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Project Highlights Section -->
-    <section id="portfolio" class="highlights-section">
-        <div class="container">
-            <h2 class="section-title">Project Highlights</h2>
-            <p class="section-subtitle">One featured project from each category</p>
-
-            <div id="highlightsGrid" class="highlights-grid">
-                <div class="highlights-loading">
-                    <div class="spinner"></div>
-                    <p>Loading highlights...</p>
-                </div>
-            </div>
-
-            <div class="view-all-container">
-                <a href="all-posts.html" class="btn btn-primary">View All Projects</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- About Section -->
-    <section id="about" class="about-section">
-        <div class="container">
-            <h2 class="section-title">About Me</h2>
-            <div class="about-content">
-                <p>I'm a developer and hardware enthusiast who loves building real solutions  from writing clean, functional code to designing and assembling hardware systems. I enjoy turning ideas into working systems, whether that's a web app, an IoT device, or an automated software solution.</p>
-                <div class="skills">
-                    <span class="skill-tag">Web Development</span>
-                    <span class="skill-tag">Mobile Development</span>
-                    <span class="skill-tag">Arduino / IoT</span>
-                    <span class="skill-tag">Networking</span>
-                    <span class="skill-tag">Cyber Security</span>
-                    <span class="skill-tag">IT Support</span>
-                    <span class="skill-tag">AI Automation</span>
-                    <span class="skill-tag">Game Development</span>
-                    <span class="skill-tag">Smart Systems</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="contact-section">
-        <div class="container">
-            <h2 class="section-title">Get In Touch</h2>
-            <p class="section-subtitle">Let's work together on your next project</p>
-            <div class="contact-form-container">
-                <form id="contactForm">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <div class="form-group">
-                            <label for="from_name">Your Name</label>
-                            <input type="text" id="from_name" name="from_name" placeholder="Juan dela Cruz" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="from_email">Your Email</label>
-                            <input type="email" id="from_email" name="from_email" placeholder="juan@email.com" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="subject">Subject</label>
-                        <input type="text" id="subject" name="subject" placeholder="Project Inquiry" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="message">Message</label>
-                        <textarea id="message" name="message" rows="6" placeholder="Tell me about your project..." required></textarea>
-                    </div>
-                    <div id="formStatus" class="form-message"></div>
-                    <button type="submit" class="submit-btn" id="submitBtn">
-                        <span id="submitBtnText">Send Message 🚀</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2026 CRONZPH. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script src="js/theme-manager.js"></script>
-    <script type="module" src="js/portfolio.min.js"></script>
-
-    <script>
-        // Mobile Menu Toggle
-        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-        const navLinks = document.getElementById('navLinks');
-        
-        mobileMenuToggle.addEventListener('click', () => {
-            mobileMenuToggle.classList.toggle('active');
-            navLinks.classList.toggle('active');
-        });
-        
-        // Close menu when clicking on a link
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenuToggle.classList.remove('active');
-                navLinks.classList.remove('active');
-            });
-        });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.navbar')) {
-                mobileMenuToggle.classList.remove('active');
-                navLinks.classList.remove('active');
-            }
-        });
-
-        emailjs.init('E1How4bzSQe9KvDTR');
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            const submitBtnText = document.getElementById('submitBtnText');
-            const formStatus = document.getElementById('formStatus');
-            submitBtn.disabled = true;
-            submitBtnText.textContent = 'Sending...';
-            formStatus.className = 'form-message';
-            formStatus.textContent = '';
-            emailjs.sendForm('service_yvudknq', 'template_jty3phh', this)
-                .then(() => {
-                    formStatus.className = 'form-message success';
-                    formStatus.textContent = '✅ Message sent! I\'ll get back to you soon.';
-                    this.reset();
-                })
-                .catch((error) => {
-                    console.error('EmailJS error:', error);
-                    formStatus.className = 'form-message error';
-                    formStatus.textContent = '❌ Something went wrong. Please try again.';
-                })
-                .finally(() => {
-                    submitBtn.disabled = false;
-                    submitBtnText.textContent = 'Send Message 🚀';
-                });
-        });
-    </script>
 </body>
+
 </html>
