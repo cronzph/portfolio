@@ -131,15 +131,24 @@ export default function Blog() {
             done();
         });
 
-        const unsubCats = onValue(ref(db, 'blogCategories'), snap => {
-            const cats = [];
-            if (snap.exists()) snap.forEach(c => cats.push({ id: c.key, ...c.val() }));
-            setCategories(cats);
-            catsLoaded = true;
-            done();
-        });
+        // ponytail: REST fetch to bypass SDK cache — blogCategories is public (.read: true)
+        fetch('https://portfolio-b60f9-default-rtdb.firebaseio.com/blogCategories.json')
+            .then(r => r.json())
+            .then(data => {
+                const cats = [];
+                if (data && typeof data === 'object') {
+                    Object.entries(data).forEach(([id, val]) => cats.push({ id, ...val }));
+                }
+                setCategories(cats);
+                catsLoaded = true;
+                done();
+            })
+            .catch(() => {
+                catsLoaded = true;
+                done();
+            });
 
-        return () => { unsubPosts(); unsubCats(); };
+        return () => { unsubPosts(); };
     }, []);
 
     // Featured post: only explicitly flagged `featured: true`
