@@ -2,31 +2,17 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { ref, onValue } from 'firebase/database';
 import { db } from '../firebase';
 import PostModal from '../components/PostModal';
-import { CAT_COLORS } from '../constants';
 import { parseEmbedUrl } from '../utils/embedParser';
 
-// ── Blog tags (separate from portfolio categories) ────────────────────────────
-const BLOG_TAGS = [
-    'devlog', 'career', 'founder', 'tech-opinion', 'hardware',
-    'student-life', 'hunter-diary', 'tutorial',
-];
-
-function getPostTags(post) {
-    if (Array.isArray(post.tags) && post.tags.length > 0) return post.tags;
-    if (Array.isArray(post.categories) && post.categories.length > 0) return post.categories;
-    if (post.category) return [post.category];
-    return [];
-}
-
 // ── Horizontal scroll row ─────────────────────────────────────────────────────
-function CategoryRow({ tag, posts, onSelect }) {
+function CategoryRow({ label, posts, onSelect }) {
     const scrollRef = useRef(null);
     if (posts.length === 0) return null;
 
     return (
         <div className="blog-cat-row">
             <div className="blog-cat-row__header">
-                <h3 className="blog-cat-row__title">#{tag}</h3>
+                <h3 className="blog-cat-row__title">#{label}</h3>
                 <span className="blog-cat-row__count">{posts.length} post{posts.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="blog-cat-row__scroll" ref={scrollRef}>
@@ -82,11 +68,11 @@ function BlogMiniCard({ post, onClick }) {
 }
 
 // ── Hero banner ───────────────────────────────────────────────────────────────
-function HeroBanner({ post, onSelect }) {
+function HeroBanner({ post, catName, onSelect }) {
     if (!post) return null;
 
     const imageUrl = post.coverImage || post.bannerImage?.data || post.images?.[0]?.data || null;
-    const tags = getPostTags(post);
+    const tags = post.tags?.length ? post.tags : (catName ? [catName] : []);
     const date = new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
         year: 'numeric', month: 'long', day: 'numeric',
     });
@@ -123,47 +109,57 @@ function HeroBanner({ post, onSelect }) {
 // ── Blog page ─────────────────────────────────────────────────────────────────
 export default function Blog() {
     const [posts, setPosts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState(null);
 
     useEffect(() => {
-        const unsub = onValue(ref(db, 'posts'), snap => {
+        let postsLoaded = false, catsLoaded = false;
+        const done = () => { if (postsLoaded && catsLoaded) setLoading(false); };
+
+        const unsubPosts = onValue(ref(db, 'posts'), snap => {
             const arr = [];
             if (snap.exists()) {
                 snap.forEach(c => {
                     const p = { id: c.key, ...c.val() };
-                    // Only show posts explicitly flagged as blog posts
                     if (p.blog === true || p.type === 'blog') arr.push(p);
                 });
             }
             arr.sort((a, b) => (b.publishedAt || b.createdAt) - (a.publishedAt || a.createdAt));
             setPosts(arr);
-            setLoading(false);
+            postsLoaded = true;
+            done();
         });
-        return unsub;
+
+        const unsubCats = onValue(ref(db, 'blogCategories'), snap => {
+            const cats = [];
+            if (snap.exists()) snap.forEach(c => cats.push({ id: c.key, ...c.val() }));
+            setCategories(cats);
+            catsLoaded = true;
+            done();
+        });
+
+        return () => { unsubPosts(); unsubCats(); };
     }, []);
 
-    // Featured post: flagged `featured: true`, or most recent
-    const featured = useMemo(() => {
-        const f = posts.find(p => p.featured === true);
-        return f || posts[0] || null;
-    }, [posts]);
+    // Featured post: only explicitly flagged `featured: true`
+    const featured = useMemo(() => posts.find(p => p.featured === true) || null, [posts]);
 
-    // Group posts by tag for horizontal rows
+    // Category name lookup map
+    const catMap = useMemo(() => Object.fromEntries(categories.map(c => [c.id, c.name])), [categories]);
+
+    // Group posts by blogCategory rows; uncategorized fall into #latest
     const taggedRows = useMemo(() => {
         const rows = [];
-        for (const tag of BLOG_TAGS) {
-            const matching = posts.filter(p =>
-                getPostTags(p).some(t => t.toLowerCase() === tag.toLowerCase())
-            );
-            if (matching.length > 0) rows.push({ tag, posts: matching });
+        for (const cat of categories) {
+            const matching = posts.filter(p => p.category === cat.id);
+            if (matching.length > 0) rows.push({ label: cat.name, posts: matching });
         }
-        // Also add an "uncategorized" row for posts that don't match any tag
         const categorized = new Set(rows.flatMap(r => r.posts.map(p => p.id)));
         const uncategorized = posts.filter(p => !categorized.has(p.id));
-        if (uncategorized.length > 0) rows.push({ tag: 'latest', posts: uncategorized });
+        if (uncategorized.length > 0) rows.push({ label: 'latest', posts: uncategorized });
         return rows;
-    }, [posts]);
+    }, [posts, categories]);
 
     return (
         <div className="blog-page" style={{ paddingTop: '80px', minHeight: '100vh' }}>
@@ -191,12 +187,12 @@ export default function Blog() {
                 ) : (
                     <>
                         {/* Hero banner */}
-                        <HeroBanner post={featured} onSelect={setModal} />
+                        <HeroBanner post={featured} catName={featured ? catMap[featured.category] : null} onSelect={setModal} />
 
                         {/* Horizontal category rows */}
                         <div className="blog-rows">
-                            {taggedRows.map(({ tag, posts: rowPosts }) => (
-                                <CategoryRow key={tag} tag={tag} posts={rowPosts} onSelect={setModal} />
+                            {taggedRows.map(({ label, posts: rowPosts }) => (
+                                <CategoryRow key={label} label={label} posts={rowPosts} onSelect={setModal} />
                             ))}
                         </div>
                     </>
